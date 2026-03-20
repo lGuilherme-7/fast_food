@@ -1,633 +1,1244 @@
 <?php
-/**
- * index.php — Canto do Sabor
- * Home do e-commerce | Versão 2.0
- *
- * Estrutura preparada para MySQL.
- * Arrays PHP simulam queries futuras.
- */
-
-// ─────────────────────────────────────────────────────────────────────
-// DADOS — substituir por PDO/MySQLi futuramente
-// Ex: $produtos = $pdo->query("SELECT * FROM produtos WHERE destaque=1")->fetchAll();
-// ─────────────────────────────────────────────────────────────────────
-
-$categorias = [
-    ['id'=>1, 'slug'=>'acai',    'nome'=>'Açaí',       'emoji'=>'🫐', 'cor'=>'#7C3AED', 'imagem'=>'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400&q=80'],
-    ['id'=>2, 'slug'=>'burguer', 'nome'=>'Burguers',   'emoji'=>'🍔', 'cor'=>'#DC2626', 'imagem'=>'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80'],
-    ['id'=>3, 'slug'=>'doces',   'nome'=>'Doces',      'emoji'=>'🍰', 'cor'=>'#D97706', 'imagem'=>'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=400&q=80'],
-    ['id'=>4, 'slug'=>'bebidas', 'nome'=>'Bebidas',    'emoji'=>'🧃', 'cor'=>'#059669', 'imagem'=>'https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=400&q=80'],
-    ['id'=>5, 'slug'=>'combos',  'nome'=>'Combos',     'emoji'=>'🎁', 'cor'=>'#EA580C', 'imagem'=>'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=400&q=80'],
+// =============================================
+// DADOS SIMULADOS - Substituir por banco depois
+// =============================================
+$produtos_destaque = [
+    [
+        "id" => 1,
+        "nome" => "Açaí Premium 500ml",
+        "preco" => 18.90,
+        "categoria" => "acai",
+        "imagem" => "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400&q=80",
+        "destaque" => true
+    ],
+    [
+        "id" => 2,
+        "nome" => "Hambúrguer Smash",
+        "preco" => 29.90,
+        "categoria" => "hamburguer",
+        "imagem" => "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80",
+        "destaque" => true
+    ],
+    [
+        "id" => 3,
+        "nome" => "Bolo de Pote Ninho",
+        "preco" => 14.90,
+        "categoria" => "doces",
+        "imagem" => "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=400&q=80",
+        "destaque" => true
+    ],
+    [
+        "id" => 4,
+        "nome" => "Milkshake Oreo",
+        "preco" => 16.90,
+        "categoria" => "bebidas",
+        "imagem" => "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&q=80",
+        "destaque" => true
+    ],
+    [
+        "id" => 5,
+        "nome" => "Açaí Tradicional 300ml",
+        "preco" => 12.90,
+        "categoria" => "acai",
+        "imagem" => "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80",
+        "destaque" => true
+    ],
+    [
+        "id" => 6,
+        "nome" => "Combo Smash Duplo",
+        "preco" => 42.90,
+        "categoria" => "hamburguer",
+        "imagem" => "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400&q=80",
+        "destaque" => true
+    ],
 ];
 
-$produtos_destaque = [
-    ['id'=>1,'nome'=>'Açaí Cremoso 500ml','slug'=>'acai','preco'=>18.90,'original'=>null,   'tag'=>'Mais Pedido','tag_tipo'=>'hot','img'=>'https://images.unsplash.com/photo-1590301157890-4810ed352733?w=500&q=85','desc'=>'Granola, leite condensado e frutas frescas.'],
-    ['id'=>2,'nome'=>'Double Smash','slug'=>'burguer',   'preco'=>32.90,'original'=>38.90,'tag'=>'13% off',    'tag_tipo'=>'off','img'=>'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&q=85','desc'=>'Dois blends 150g, cheddar e bacon.'],
-    ['id'=>3,'nome'=>'Bolo de Pote Oreo','slug'=>'doces','preco'=>14.90,'original'=>null,   'tag'=>'Novo',       'tag_tipo'=>'new','img'=>'https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=500&q=85','desc'=>'Camadas de bolo, creme e Oreo.'],
-    ['id'=>4,'nome'=>'Limonada Suíça','slug'=>'bebidas', 'preco'=>12.90,'original'=>null,   'tag'=>null,         'tag_tipo'=>null, 'img'=>'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=500&q=85','desc'=>'Limão siciliano com leite condensado.'],
-    ['id'=>5,'nome'=>'Açaí Power 700ml','slug'=>'acai',  'preco'=>25.90,'original'=>29.90,'tag'=>'11% off',    'tag_tipo'=>'off','img'=>'https://images.unsplash.com/photo-1606214174585-fe31582dc6ee?w=500&q=85','desc'=>'Com banana, morango e mel artesanal.'],
-    ['id'=>6,'nome'=>'Combo Família','slug'=>'combos',   'preco'=>79.90,'original'=>99.90,'tag'=>'20% off',    'tag_tipo'=>'off','img'=>'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=500&q=85','desc'=>'2 burguers + 2 açaís + 2 bebidas.'],
-    ['id'=>7,'nome'=>'Cheesecake Maracujá','slug'=>'doces','preco'=>16.90,'original'=>null,'tag'=>'Favorito',  'tag_tipo'=>'hot','img'=>'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=500&q=85','desc'=>'Cremoso com calda fresca de maracujá.'],
-    ['id'=>8,'nome'=>'Milk Shake 400ml','slug'=>'bebidas','preco'=>16.90,'original'=>null, 'tag'=>null,         'tag_tipo'=>null, 'img'=>'https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=500&q=85','desc'=>'Chocolate, morango ou baunilha.'],
+$categorias = [
+    ["slug" => "acai",      "nome" => "Açaí",       "emoji" => "🍇", "cor" => "#7c3aed"],
+    ["slug" => "hamburguer","nome" => "Hambúrguer",  "emoji" => "🍔", "cor" => "#ea580c"],
+    ["slug" => "doces",     "nome" => "Doces",       "emoji" => "🍰", "cor" => "#ec4899"],
+    ["slug" => "bebidas",   "nome" => "Bebidas",     "emoji" => "🥤", "cor" => "#0ea5e9"],
 ];
 
 $depoimentos = [
-    ['nome'=>'Juliana M.','nota'=>5,'texto'=>'Melhor açaí da cidade, sem exagero. Chega sempre fresquinho e no tempo certo. Virei cliente fiel!','avatar'=>'J'],
-    ['nome'=>'Carlos R.', 'nota'=>5,'texto'=>'O Double Smash é impecável. Carne no ponto, bacon crocante, pão macio. Perfeito!','avatar'=>'C'],
-    ['nome'=>'Ana P.',    'nota'=>5,'texto'=>'Peço toda semana. O bolo de pote Oreo é viciante. Atendimento sempre atencioso. 10/10.','avatar'=>'A'],
+    ["nome" => "Ana Clara",   "texto" => "Melhor açaí da cidade! Sempre fresquinho e cheio de sabor.", "nota" => 5],
+    ["nome" => "Rafael M.",   "texto" => "O smash burger é incrível, já virei cliente fiel mesmo.",    "nota" => 5],
+    ["nome" => "Juliana P.",  "texto" => "Atendimento rápido e os bolos de pote são demais!",          "nota" => 5],
 ];
-
-$ofertas = [
-    ['titulo'=>'Combo da Semana','sub'=>'2 Burguers + 2 Bebidas','preco'=>'R$ 49,90','eco'=>'Economize R$ 14,00','validade'=>'Só até domingo','emoji'=>'🍔','cor'=>'#DC2626'],
-    ['titulo'=>'Açaí com 20% OFF','sub'=>'Todos os tamanhos','preco'=>'A partir de R$ 14,90','eco'=>'No Pix à vista','validade'=>'Hoje somente','emoji'=>'🫐','cor'=>'#7C3AED'],
-    ['titulo'=>'3 Bolos por R$ 39','sub'=>'Escolha 3 sabores','preco'=>'R$ 39,00','eco'=>'De R$ 44,70','validade'=>'Estoque limitado','emoji'=>'🍰','cor'=>'#D97706'],
-];
-
-function moeda(float $v): string {
-    return 'R$ ' . number_format($v, 2, ',', '.');
-}
 ?>
+
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Canto do Sabor — Açaí artesanal, burguers smash, doces e bebidas. Peça agora e receba em até 40 min.">
-    <title>Canto do Sabor — Açaí, Burguers &amp; Mais</title>
-
-    <!-- Bootstrap 5 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Google Fonts: DM Serif Display + DM Sans -->
+    <title>Sabor & Cia — Açaí, Burgers, Doces e Bebidas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="../assets/css/style.css">
+
+
+    <style>
+        /* ================================
+           RESET & VARIÁVEIS
+        ================================ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --rosa:       #f43f7a;
+            --rosa-claro: #fce7f0;
+            --roxo:       #7c3aed;
+            --laranja:    #ff6b2c;
+            --creme:      #fff8f4;
+            --branco:     #ffffff;
+            --escuro:     #1a1014;
+            --cinza:      #6b7280;
+            --borda:      #e5e7eb;
+
+            --font-titulo: 'Playfair Display', Georgia, serif;
+            --font-corpo:  'DM Sans', sans-serif;
+
+            --r: 12px;
+            --sombra: 0 4px 24px rgba(0,0,0,.08);
+            --sombra-hover: 0 8px 32px rgba(0,0,0,.14);
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: var(--font-corpo);
+            color: var(--escuro);
+            background: var(--branco);
+            overflow-x: hidden;
+        }
+
+        img{ 
+            display: block; 
+            width: 100%; 
+            object-fit: cover; 
+        }
+
+        a{ 
+            text-decoration: none; 
+            color: inherit; 
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1140px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ================================
+           BOTÕES
+        ================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-family: var(--font-corpo);
+            font-weight: 600;
+            font-size: .95rem;
+            cursor: pointer;
+            border: none;
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--sombra-hover); }
+        .btn:active { transform: translateY(0); }
+
+        .btn-primary {
+            background: var(--rosa);
+            color: #fff;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+        }
+        .btn-wpp {
+            background: #25D366;
+            color: #fff;
+            font-size: 1.05rem;
+            padding: 16px 36px;
+        }
+        .btn-dark {
+            background: var(--escuro);
+            color: #fff;
+        }
+
+        /* ================================
+           NAVBAR
+        ================================ */
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 999;
+            background: rgba(255,255,255,.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--borda);
+            transition: box-shadow .3s;
+        }
+        .navbar.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,.08); }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100px;
+        }
+
+        .nav-logo {
+            font-family: var(--font-titulo);
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--escuro);
+            letter-spacing: -.5px;
+        }
+        .nav-logo span { color: var(--rosa); }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+        .nav-links a {
+            font-weight: 500;
+            font-size: .9rem;
+            color: var(--cinza);
+            transition: color .2s;
+        }
+        .nav-links a:hover { color: var(--rosa); }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .nav-cart {
+            position: relative;
+            background: var(--rosa-claro);
+            border: none;
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: background .2s;
+        }
+        .nav-cart:hover { background: var(--rosa); }
+        .nav-cart:hover .cart-icon { filter: brightness(10); }
+        .cart-icon { font-size: 1.1rem; }
+
+        .cart-badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: var(--rosa);
+            color: #fff;
+            font-size: .65rem;
+            font-weight: 700;
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+        }
+
+        .nav-hamburger {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* ================================
+           HERO
+        ================================ */
+        .hero {
+            min-height: 100vh;
+            background: url('https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=1400&q=80') center/cover no-repeat;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(20,5,10,.75) 0%, rgba(20,5,10,.45) 100%);
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 600px;
+            padding-top: 64px;
+        }
+        .hero-tag {
+            display: inline-block;
+            background: var(--rosa);
+            color: #fff;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+        }
+        .hero h1 {
+            font-family: var(--font-titulo);
+            font-size: clamp(2.4rem, 6vw, 3.8rem);
+            line-height: 1.1;
+            color: #fff;
+            margin-bottom: 18px;
+        }
+        .hero h1 em {
+            font-style: normal;
+            color: var(--rosa);
+        }
+        .hero p {
+            color: rgba(255,255,255,.8);
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 32px;
+            max-width: 480px;
+        }
+        .hero-btns {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        /* ================================
+           CATEGORIAS
+        ================================ */
+        .categorias {
+            background: var(--branco);
+            padding: 72px 0 56px;
+        }
+        .section-header {
+            text-align: center;
+            margin-bottom: 44px;
+        }
+        .section-header h2 {
+            font-family: var(--font-titulo);
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            line-height: 1.2;
+            margin-bottom: 10px;
+        }
+        .section-header p {
+            color: var(--cinza);
+            font-size: .95rem;
+        }
+        .linha-rosa {
+            display: inline-block;
+            width: 48px; height: 3px;
+            background: var(--rosa);
+            border-radius: 2px;
+            margin: 12px auto 0;
+        }
+
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .cat-card {
+            background: var(--creme);
+            border-radius: var(--r);
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform .25s ease, box-shadow .25s ease;
+            border: 2px solid transparent;
+        }
+        .cat-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--sombra-hover);
+            border-color: var(--rosa);
+        }
+        .cat-emoji {
+            font-size: 2.8rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .cat-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .cat-card p {
+            font-size: .82rem;
+            color: var(--cinza);
+            margin-top: 4px;
+        }
+
+        /* ================================
+           PRODUTOS EM DESTAQUE
+        ================================ */
+        .produtos {
+            background: var(--rosa-claro);
+            padding: 72px 0;
+        }
+        .prod-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .prod-card {
+            background: var(--branco);
+            border-radius: var(--r);
+            overflow: hidden;
+            box-shadow: var(--sombra);
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+        .prod-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--sombra-hover);
+        }
+        .prod-img {
+            height: 190px;
+            overflow: hidden;
+        }
+        .prod-img img {
+            height: 100%;
+            transition: transform .4s ease;
+        }
+        .prod-card:hover .prod-img img { transform: scale(1.06); }
+
+        .prod-body {
+            padding: 18px 18px 20px;
+        }
+        .prod-nome {
+            font-weight: 600;
+            font-size: .95rem;
+            margin-bottom: 6px;
+        }
+        .prod-preco {
+            font-family: var(--font-titulo);
+            font-size: 1.3rem;
+            color: var(--rosa);
+            font-weight: 700;
+            margin-bottom: 14px;
+        }
+        .btn-add {
+            width: 100%;
+            padding: 11px;
+            border-radius: 8px;
+            background: var(--escuro);
+            color: #fff;
+            border: none;
+            font-family: var(--font-corpo);
+            font-weight: 600;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: background .2s, transform .15s;
+        }
+        .btn-add:hover { background: var(--rosa); transform: scale(1.02); }
+
+        /* ================================
+           OFERTA
+        ================================ */
+        .oferta {
+            background: var(--escuro);
+            padding: 72px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .oferta::before {
+            content: '';
+            position: absolute;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(244,63,122,.18) 0%, transparent 70%);
+            top: -120px; right: -80px;
+            pointer-events: none;
+        }
+        .oferta-inner {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+        }
+        .oferta-texto { flex: 1; }
+        .oferta-badge {
+            display: inline-block;
+            background: var(--rosa);
+            color: #fff;
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 50px;
+            margin-bottom: 16px;
+        }
+        .oferta-texto h2 {
+            font-family: var(--font-titulo);
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            color: #fff;
+            line-height: 1.15;
+            margin-bottom: 14px;
+        }
+        .oferta-texto h2 span { color: var(--rosa); }
+        .oferta-texto p {
+            color: rgba(255,255,255,.65);
+            line-height: 1.7;
+            margin-bottom: 28px;
+            font-size: .95rem;
+        }
+        .oferta-preco {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+        .oferta-de {
+            color: rgba(255,255,255,.4);
+            text-decoration: line-through;
+            font-size: 1.1rem;
+        }
+        .oferta-por {
+            font-family: var(--font-titulo);
+            font-size: 2.6rem;
+            color: var(--rosa);
+            font-weight: 700;
+        }
+        .oferta-img {
+            flex: 0 0 360px;
+            height: 300px;
+            border-radius: var(--r);
+            overflow: hidden;
+        }
+
+        /* ================================
+           SOBRE / HISTÓRIA
+        ================================ */
+        .sobre {
+            background: var(--branco);
+            padding: 80px 0;
+        }
+        .sobre-inner {
+            display: flex;
+            align-items: center;
+            gap: 64px;
+        }
+        .sobre-img {
+            flex: 0 0 45%;
+            height: 400px;
+            border-radius: var(--r);
+            overflow: hidden;
+        }
+        .sobre-texto { flex: 1; }
+        .sobre-texto h2 {
+            font-family: var(--font-titulo);
+            font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+        .sobre-texto p {
+            color: var(--cinza);
+            line-height: 1.8;
+            margin-bottom: 14px;
+            font-size: .95rem;
+        }
+        .sobre-itens {
+            display: flex;
+            gap: 20px;
+            margin-top: 28px;
+        }
+        .sobre-item {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            background: var(--creme);
+            border-radius: 10px;
+        }
+        .sobre-item .num {
+            font-family: var(--font-titulo);
+            font-size: 1.8rem;
+            color: var(--rosa);
+            font-weight: 700;
+        }
+        .sobre-item .label {
+            font-size: .78rem;
+            color: var(--cinza);
+            margin-top: 2px;
+        }
+
+        /* ================================
+           DEPOIMENTOS
+        ================================ */
+        .depoimentos {
+            background: var(--creme);
+            padding: 72px 0;
+        }
+        .dep-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 22px;
+            margin-top: 44px;
+        }
+        .dep-card {
+            background: var(--branco);
+            border-radius: var(--r);
+            padding: 28px 24px;
+            box-shadow: var(--sombra);
+        }
+        .dep-estrelas { color: #f59e0b; font-size: 1rem; margin-bottom: 12px; }
+        .dep-texto {
+            font-size: .92rem;
+            color: var(--escuro);
+            line-height: 1.7;
+            margin-bottom: 16px;
+            font-style: italic;
+        }
+        .dep-nome { font-weight: 600; font-size: .85rem; color: var(--cinza); }
+
+        /* ================================
+           CTA FINAL
+        ================================ */
+        .cta-final {
+            background: linear-gradient(135deg, var(--rosa) 0%, #c2185b 100%);
+            padding: 88px 0;
+            text-align: center;
+        }
+        .cta-final h2 {
+            font-family: var(--font-titulo);
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            color: #fff;
+            line-height: 1.15;
+            margin-bottom: 14px;
+        }
+        .cta-final p {
+            color: rgba(255,255,255,.8);
+            font-size: 1rem;
+            margin-bottom: 36px;
+        }
+        .cta-info {
+            display: flex;
+            justify-content: center;
+            gap: 36px;
+            margin-top: 36px;
+        }
+        .cta-info-item {
+            color: rgba(255,255,255,.8);
+            font-size: .88rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ================================
+           FOOTER
+        ================================ */
+        .footer {
+            background: var(--escuro);
+            padding: 56px 0 28px;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 48px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+        }
+        .footer-logo {
+            font-family: var(--font-titulo);
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .footer-logo span { color: var(--rosa); }
+        .footer-desc {
+            color: rgba(255,255,255,.5);
+            font-size: .88rem;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+        .footer-social { display: flex; gap: 10px; }
+        .soc-btn {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            background: rgba(255,255,255,.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .95rem;
+            transition: background .2s;
+        }
+        .soc-btn:hover { background: var(--rosa); }
+
+        .footer h4 {
+            color: #fff;
+            font-size: .85rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+        }
+        .footer ul { list-style: none; }
+        .footer ul li { margin-bottom: 10px; }
+        .footer ul a {
+            color: rgba(255,255,255,.5);
+            font-size: .88rem;
+            transition: color .2s;
+        }
+        .footer ul a:hover { color: var(--rosa); }
+        .footer-copy {
+            text-align: center;
+            color: rgba(255,255,255,.3);
+            font-size: .8rem;
+            padding-top: 28px;
+        }
+
+        /* ================================
+           CARRINHO SIDEBAR
+        ================================ */
+        .cart-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.5);
+            z-index: 1100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s;
+        }
+        .cart-overlay.open { opacity: 1; pointer-events: all; }
+
+        .cart-sidebar {
+            position: fixed;
+            top: 0; right: -380px;
+            width: 360px;
+            height: 100vh;
+            background: var(--branco);
+            z-index: 1200;
+            transition: right .35s cubic-bezier(.4,0,.2,1);
+            display: flex;
+            flex-direction: column;
+        }
+        .cart-sidebar.open { right: 0; }
+        .cart-head {
+            padding: 22px 22px 16px;
+            border-bottom: 1px solid var(--borda);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .cart-head h3 {
+            font-family: var(--font-titulo);
+            font-size: 1.3rem;
+        }
+        .cart-close {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: var(--cinza);
+        }
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 22px;
+        }
+        .cart-empty {
+            text-align: center;
+            color: var(--cinza);
+            padding: 48px 0;
+            font-size: .95rem;
+        }
+        .cart-item {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--borda);
+        }
+        .cart-item-img {
+            width: 56px; height: 56px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .cart-item-info { flex: 1; }
+        .cart-item-nome { font-weight: 600; font-size: .9rem; }
+        .cart-item-preco { color: var(--rosa); font-weight: 700; font-size: .9rem; }
+        .cart-item-rm {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--cinza);
+            font-size: 1.1rem;
+        }
+        .cart-foot {
+            padding: 20px 22px;
+            border-top: 1px solid var(--borda);
+        }
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 16px;
+        }
+        .cart-total span:last-child { color: var(--rosa); font-family: var(--font-titulo); font-size: 1.2rem; }
+
+        /* ================================
+           TOAST
+        ================================ */
+        .toast {
+            position: fixed;
+            bottom: 24px; left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--escuro);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 50px;
+            font-size: .9rem;
+            font-weight: 500;
+            z-index: 2000;
+            opacity: 0;
+            transition: all .35s cubic-bezier(.4,0,.2,1);
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ================================
+           RESPONSIVIDADE
+        ================================ */
+        @media (max-width: 900px) {
+            .nav-links { display: none; }
+            .nav-hamburger { display: block; }
+
+            .cat-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .prod-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .oferta-inner { flex-direction: column; gap: 36px; }
+            .oferta-img { flex: none; width: 100%; height: 220px; }
+
+            .sobre-inner { flex-direction: column; gap: 36px; }
+            .sobre-img { flex: none; width: 100%; height: 260px; }
+
+            .dep-grid { grid-template-columns: 1fr; }
+
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+
+            .cta-info { flex-direction: column; gap: 12px; align-items: center; }
+        }
+
+        @media (max-width: 580px) {
+            .prod-grid { grid-template-columns: 1fr; }
+            .cat-grid {
+                display: flex;
+                overflow-x: auto;
+                gap: 14px;
+                scroll-snap-type: x mandatory;
+                padding-bottom: 8px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .cat-card {
+                min-width: 150px;
+                scroll-snap-align: start;
+                flex-shrink: 0;
+            }
+            .hero-btns { flex-direction: column; }
+            .hero-btns .btn { text-align: center; justify-content: center; }
+            .sobre-itens { flex-direction: column; }
+            .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+            .cart-sidebar { width: 100%; }
+        }
+    </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════════════════
+<!-- ================================
      NAVBAR
-     ═══════════════════════════════════════════════════════════════════ -->
-<header class="cs-header" id="cs-header" role="banner">
-    <nav class="navbar navbar-expand-lg" aria-label="Navegação principal">
-        <div class="container">
+================================ -->
+<nav class="navbar" id="navbar">
+    <div class="container nav-inner">
+        <a href="#" class="nav-logo">Sabor<span>&</span>Cia</a>
 
-            <!-- Logo -->
-            <a class="cs-logo" href="index.php" aria-label="Canto do Sabor — Página inicial">
-                <span class="cs-logo__mark" aria-hidden="true">✦</span>
-                <span class="cs-logo__name">Canto<em>do Sabor</em></span>
-            </a>
+        <ul class="nav-links">
+            <li><a href="#inicio">Início</a></li>
+            <li><a href="#cardapio">Cardápio</a></li>
+            <li><a href="#ofertas">Ofertas</a></li>
+            <li><a href="#sobre">Sobre</a></li>
+        </ul>
 
-            <!-- Mobile: carrinho + toggler -->
-            <div class="d-flex align-items-center gap-2 d-lg-none ms-auto">
-                <button class="cs-icon-btn cs-cart-btn"
-                        aria-label="Abrir carrinho"
-                        data-bs-toggle="offcanvas"
-                        data-bs-target="#cartDrawer">
-                    <i class="bi bi-bag-heart" aria-hidden="true"></i>
-                    <span class="cs-cart-count" id="badge-mob" aria-live="polite">0</span>
-                </button>
-                <button class="cs-hamburger"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#csNav"
-                        aria-controls="csNav"
-                        aria-expanded="false"
-                        aria-label="Abrir menu">
-                    <span></span><span></span><span></span>
-                </button>
-            </div>
-
-            <!-- Menu -->
-            <div class="collapse navbar-collapse" id="csNav">
-                <ul class="navbar-nav mx-auto">
-                    <li class="nav-item"><a class="nav-link active" href="#inicio">Início</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#cardapio">Cardápio</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#ofertas">Ofertas</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#sobre">Sobre</a></li>
-                </ul>
-                <div class="cs-nav-actions d-none d-lg-flex align-items-center gap-3">
-                    <button class="cs-icon-btn cs-cart-btn"
-                            aria-label="Carrinho"
-                            data-bs-toggle="offcanvas"
-                            data-bs-target="#cartDrawer">
-                        <i class="bi bi-bag-heart" aria-hidden="true"></i>
-                        <span class="cs-cart-count" id="badge-desk" aria-live="polite">0</span>
-                    </button>
-                    <a href="#" class="cs-btn cs-btn--ghost cs-btn--sm">
-                        <i class="bi bi-person" aria-hidden="true"></i> Entrar
-                    </a>
-                </div>
-            </div>
-
-        </div>
-    </nav>
-</header>
-
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     HERO — IMPACTO
-     ═══════════════════════════════════════════════════════════════════ -->
-<section class="cs-hero" id="inicio" aria-label="Banner principal">
-
-    <!-- BG com parallax suave via JS -->
-    <div class="cs-hero__bg" id="heroBg" aria-hidden="true">
-        <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=1600&q=90"
-             alt="" class="cs-hero__bg-img" loading="eager" fetchpriority="high">
-    </div>
-    <div class="cs-hero__overlay" aria-hidden="true"></div>
-
-    <!-- Partículas decorativas -->
-    <div class="cs-hero__sparks" aria-hidden="true">
-        <span></span><span></span><span></span><span></span><span></span>
-    </div>
-
-    <div class="container cs-hero__inner">
-        <div class="row">
-            <div class="col-lg-7 col-xl-6">
-
-                <!-- Pill de confiança -->
-                <div class="cs-hero__pill">
-                    <span class="cs-hero__pill-dot" aria-hidden="true"></span>
-                    Aberto agora · Entrega em ~35 min
-                </div>
-
-                <h1 class="cs-hero__headline">
-                    O sabor que<br>
-                    <em>conquista</em><br>
-                    desde a primeira<br>
-                    mordida.
-                </h1>
-
-                <p class="cs-hero__sub">
-                    Açaí cremoso, burguers artesanais, doces irresistíveis —
-                    tudo feito na hora e entregue com carinho.
-                </p>
-
-                <div class="cs-hero__actions">
-                    <a href="#cardapio" class="cs-btn cs-btn--primary cs-btn--lg">
-                        Ver Cardápio
-                        <i class="bi bi-arrow-right" aria-hidden="true"></i>
-                    </a>
-                    <a href="https://wa.me/5511999999999"
-                       target="_blank" rel="noopener noreferrer"
-                       class="cs-btn cs-btn--wa cs-btn--lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
-                             fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                            <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
-                        </svg>
-                        Pedir Agora
-                    </a>
-                </div>
-
-                <!-- Métricas -->
-                <div class="cs-hero__metrics">
-                    <div class="cs-hero__metric">
-                        <strong>4.9</strong>
-                        <span>⭐ Avaliação</span>
-                    </div>
-                    <div class="cs-hero__metric-divider" aria-hidden="true"></div>
-                    <div class="cs-hero__metric">
-                        <strong>+3.200</strong>
-                        <span>Pedidos entregues</span>
-                    </div>
-                    <div class="cs-hero__metric-divider" aria-hidden="true"></div>
-                    <div class="cs-hero__metric">
-                        <strong>∼35min</strong>
-                        <span>Tempo de entrega</span>
-                    </div>
-                </div>
-
-            </div>
+        <div class="nav-actions">
+            <button class="nav-cart" id="btnAbrirCart" aria-label="Abrir carrinho">
+                <span class="cart-icon">🛒</span>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </button>
+            <button class="nav-hamburger" id="navHamburger">☰</button>
         </div>
     </div>
+</nav>
 
-    <!-- Curva de transição -->
-    <div class="cs-hero__curve" aria-hidden="true">
-        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0,80 C360,0 1080,0 1440,80 L1440,80 L0,80 Z" fill="var(--cs-bg)"/>
-        </svg>
+<!-- ================================
+     HERO
+================================ -->
+<section class="hero" id="inicio">
+    <div class="container hero-content">
+        <span class="hero-tag">✨ Fresquinho todo dia</span>
+        <h1>O sabor que conquista desde a <em>primeira mordida</em></h1>
+        <p>Açaí cremoso, burgers artesanais, doces incríveis e bebidas geladas. Tudo feito com amor, entregue na sua porta.</p>
+        <div class="hero-btns">
+            <a href="#cardapio" class="btn btn-primary">🍽️ Ver Cardápio</a>
+            <a href="https://wa.me/5500000000000?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" class="btn btn-outline">📲 Pedir Agora</a>
+        </div>
     </div>
 </section>
 
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     CATEGORIAS — FACILIDADE
-     ═══════════════════════════════════════════════════════════════════ -->
-<section class="cs-section cs-categories" id="categorias" aria-labelledby="cat-ttl">
+<!-- ================================
+     CATEGORIAS
+================================ -->
+<section class="categorias" id="cardapio">
     <div class="container">
+        <div class="section-header">
+            <h2>O que você quer hoje?</h2>
+            <p>Escolha a sua favorita e já vai!</p>
+            <span class="linha-rosa"></span>
+        </div>
 
-        <header class="cs-section-header cs-section-header--center" data-reveal>
-            <p class="cs-eyebrow">O que você quer hoje?</p>
-            <h2 class="cs-section-title" id="cat-ttl">Escolha sua categoria</h2>
-        </header>
-
-        <div class="cs-cat-track" role="list" aria-label="Categorias">
-            <?php foreach ($categorias as $i => $c): ?>
-            <a class="cs-cat-card"
-               href="#cardapio"
-               data-cat="<?= $c['slug'] ?>"
-               role="listitem"
-               aria-label="Ver <?= htmlspecialchars($c['nome']) ?>"
-               data-reveal
-               style="--delay:<?= $i * 80 ?>ms">
-                <div class="cs-cat-card__img-wrap" style="--accent:<?= $c['cor'] ?>">
-                    <img src="<?= $c['imagem'] ?>" alt="<?= htmlspecialchars($c['nome']) ?>" loading="lazy">
-                    <div class="cs-cat-card__overlay" aria-hidden="true"></div>
-                </div>
-                <div class="cs-cat-card__label">
-                    <span class="cs-cat-card__emoji" aria-hidden="true"><?= $c['emoji'] ?></span>
-                    <span><?= htmlspecialchars($c['nome']) ?></span>
-                </div>
-            </a>
+        <div class="cat-grid">
+            <?php foreach ($categorias as $cat): ?>
+            <div class="cat-card" onclick="filtrarProdutos('<?= $cat['slug'] ?>')">
+                <span class="cat-emoji"><?= $cat['emoji'] ?></span>
+                <h3><?= $cat['nome'] ?></h3>
+                <p>Ver todos</p>
+            </div>
             <?php endforeach; ?>
         </div>
     </div>
 </section>
 
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     PRODUTOS EM DESTAQUE — DESEJO
-     ═══════════════════════════════════════════════════════════════════ -->
-<section class="cs-section cs-bg-off cs-products" id="cardapio" aria-labelledby="prod-ttl">
+<!-- ================================
+     PRODUTOS EM DESTAQUE
+================================ -->
+<section class="produtos" id="produtos">
     <div class="container">
+        <div class="section-header">
+            <h2>Mais Pedidos</h2>
+            <p>Os queridinhos dos nossos clientes</p>
+            <span class="linha-rosa"></span>
+        </div>
 
-        <header class="cs-section-header" data-reveal>
-            <div>
-                <p class="cs-eyebrow">Feito com carinho</p>
-                <h2 class="cs-section-title" id="prod-ttl">Destaques do Cardápio</h2>
-            </div>
-            <!-- Filtros -->
-            <div class="cs-filter-group" role="group" aria-label="Filtrar por categoria">
-                <button class="cs-filter active" data-filter="all">Todos</button>
-                <?php foreach ($categorias as $c): ?>
-                <button class="cs-filter" data-filter="<?= $c['slug'] ?>">
-                    <?= $c['emoji'] ?> <?= htmlspecialchars($c['nome']) ?>
-                </button>
-                <?php endforeach; ?>
-            </div>
-        </header>
-
-        <div class="cs-products-grid" id="productsGrid">
-            <?php foreach ($produtos_destaque as $i => $p): ?>
-            <article class="cs-product-card"
-                     data-cat="<?= $p['slug'] ?>"
-                     data-reveal
-                     style="--delay:<?= ($i % 4) * 60 ?>ms"
-                     aria-label="<?= htmlspecialchars($p['nome']) ?>">
-
-                <?php if ($p['tag']): ?>
-                <span class="cs-product-card__tag cs-product-card__tag--<?= $p['tag_tipo'] ?>">
-                    <?= htmlspecialchars($p['tag']) ?>
-                </span>
-                <?php endif; ?>
-
-                <div class="cs-product-card__media">
-                    <img src="<?= $p['img'] ?>"
-                         alt="<?= htmlspecialchars($p['nome']) ?>"
-                         class="cs-product-card__img"
-                         loading="lazy">
-                    <button class="cs-product-card__wish"
-                            aria-label="Favoritar <?= htmlspecialchars($p['nome']) ?>">
-                        <i class="bi bi-heart" aria-hidden="true"></i>
+        <div class="prod-grid" id="prodGrid">
+            <?php foreach ($produtos_destaque as $p): ?>
+            <div class="prod-card" data-categoria="<?= $p['categoria'] ?>">
+                <div class="prod-img">
+                    <img src="<?= $p['imagem'] ?>" alt="<?= htmlspecialchars($p['nome']) ?>" loading="lazy">
+                </div>
+                <div class="prod-body">
+                    <div class="prod-nome"><?= htmlspecialchars($p['nome']) ?></div>
+                    <div class="prod-preco">R$ <?= number_format($p['preco'], 2, ',', '.') ?></div>
+                    <button class="btn-add"
+                        onclick="adicionarCarrinho(<?= $p['id'] ?>, '<?= addslashes($p['nome']) ?>', <?= $p['preco'] ?>, '<?= $p['imagem'] ?>')">
+                        + Adicionar ao carrinho
                     </button>
                 </div>
-
-                <div class="cs-product-card__body">
-                    <p class="cs-product-card__cat">
-                        <?php
-                        $cats = array_column($categorias,'emoji','slug');
-                        echo $cats[$p['slug']] ?? '';
-                        ?> <?= ucfirst($p['slug']) ?>
-                    </p>
-                    <h3 class="cs-product-card__name"><?= htmlspecialchars($p['nome']) ?></h3>
-                    <p class="cs-product-card__desc"><?= htmlspecialchars($p['desc']) ?></p>
-
-                    <div class="cs-product-card__foot">
-                        <div>
-                            <?php if ($p['original']): ?>
-                            <s class="cs-product-card__old"><?= moeda($p['original']) ?></s>
-                            <?php endif; ?>
-                            <span class="cs-product-card__price"><?= moeda($p['preco']) ?></span>
-                        </div>
-                        <button class="cs-btn-add"
-                                aria-label="Adicionar <?= htmlspecialchars($p['nome']) ?> ao carrinho"
-                                data-id="<?= $p['id'] ?>"
-                                data-nome="<?= htmlspecialchars($p['nome']) ?>"
-                                data-preco="<?= $p['preco'] ?>"
-                                data-img="<?= $p['img'] ?>">
-                            <i class="bi bi-plus" aria-hidden="true"></i>
-                        </button>
-                    </div>
-                </div>
-
-            </article>
-            <?php endforeach; ?>
-        </div>
-
-        <div class="text-center mt-5" data-reveal>
-            <a href="#" class="cs-btn cs-btn--outline cs-btn--lg">
-                Ver cardápio completo
-                <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
-            </a>
-        </div>
-    </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     OFERTAS — CONVERSÃO
-     ═══════════════════════════════════════════════════════════════════ -->
-<section class="cs-section cs-offers" id="ofertas" aria-labelledby="off-ttl">
-    <div class="container">
-
-        <header class="cs-section-header cs-section-header--center cs-section-header--light" data-reveal>
-            <p class="cs-eyebrow cs-eyebrow--light">Só por hoje</p>
-            <h2 class="cs-section-title cs-section-title--light" id="off-ttl">Ofertas Especiais</h2>
-        </header>
-
-        <div class="row g-4">
-            <?php foreach ($ofertas as $i => $o): ?>
-            <div class="col-md-4">
-                <div class="cs-offer-card" style="--accent:<?= $o['cor'] ?>" data-reveal style="--delay:<?= $i * 100 ?>ms">
-                    <div class="cs-offer-card__glow" aria-hidden="true"></div>
-                    <span class="cs-offer-card__emoji" aria-hidden="true"><?= $o['emoji'] ?></span>
-                    <span class="cs-offer-card__badge"><?= htmlspecialchars($o['validade']) ?></span>
-                    <h3 class="cs-offer-card__title"><?= htmlspecialchars($o['titulo']) ?></h3>
-                    <p class="cs-offer-card__sub"><?= htmlspecialchars($o['sub']) ?></p>
-                    <div class="cs-offer-card__pricing">
-                        <strong class="cs-offer-card__price"><?= $o['preco'] ?></strong>
-                        <span class="cs-offer-card__eco"><?= $o['eco'] ?></span>
-                    </div>
-                    <a href="#cardapio" class="cs-offer-card__cta">
-                        Pegar oferta <i class="bi bi-arrow-right" aria-hidden="true"></i>
-                    </a>
-                </div>
             </div>
             <?php endforeach; ?>
         </div>
-
     </div>
 </section>
 
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     SOBRE — CONEXÃO EMOCIONAL
-     ═══════════════════════════════════════════════════════════════════ -->
-<section class="cs-section cs-about" id="sobre" aria-labelledby="about-ttl">
-    <div class="container">
-        <div class="row align-items-center g-5 g-lg-6">
-
-            <!-- Imagens -->
-            <div class="col-lg-5" data-reveal>
-                <div class="cs-about-gallery">
-                    <img src="https://images.unsplash.com/photo-1556742031-c6961e8560b0?w=700&q=85"
-                         alt="Nossa lanchonete" class="cs-about-gallery__main" loading="lazy">
-                    <img src="https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400&q=80"
-                         alt="Açaí artesanal" class="cs-about-gallery__accent" loading="lazy">
-                    <div class="cs-about-gallery__badge">
-                        <strong>+ 5 anos</strong>
-                        <span>de história</span>
-                    </div>
-                </div>
+<!-- ================================
+     OFERTA DA SEMANA
+================================ -->
+<section class="oferta" id="ofertas">
+    <div class="container oferta-inner">
+        <div class="oferta-texto">
+            <span class="oferta-badge">🔥 Oferta da semana</span>
+            <h2>Combo Smash<br><span>+ Açaí 500ml</span></h2>
+            <p>Lanche artesanal com blend da casa, cheddar, bacon crocante + açaí cremoso com granola e banana. Tudo por um preço impossível de recusar.</p>
+            <div class="oferta-preco">
+                <span class="oferta-de">R$ 59,80</span>
+                <span class="oferta-por">R$ 44,90</span>
             </div>
-
-            <!-- Texto -->
-            <div class="col-lg-6 offset-lg-1" data-reveal data-reveal-delay="120">
-                <p class="cs-eyebrow">Nossa história</p>
-                <h2 class="cs-section-title" id="about-ttl">
-                    Feito com amor.<br>
-                    <em>Servido com orgulho.</em>
-                </h2>
-                <p class="cs-about__text">
-                    Tudo começou numa cozinha pequena e cheia de vontade. Desde 2019 a gente prepara cada prato como se fosse pra nossa própria família — com ingredientes frescos, receitas próprias e aquele toque especial que faz a diferença.
-                </p>
-                <p class="cs-about__text">
-                    Nosso açaí é batido na hora, o blend do burguer é exclusivo e cada bolo de pote é feito às 5h da manhã pela nossa confeiteira. Isso não é marketing — é o que você vai sentir na primeira garfada.
-                </p>
-                <ul class="cs-about__pillars">
-                    <li><i class="bi bi-patch-check-fill" aria-hidden="true"></i> Ingredientes sempre frescos</li>
-                    <li><i class="bi bi-clock-fill" aria-hidden="true"></i> Tudo preparado na hora</li>
-                    <li><i class="bi bi-heart-fill" aria-hidden="true"></i> Receitas com identidade própria</li>
-                    <li><i class="bi bi-truck" aria-hidden="true"></i> Entrega rápida e cuidadosa</li>
-                </ul>
-            </div>
-
+            <button class="btn btn-primary" onclick="adicionarCarrinho(99, 'Combo Smash + Açaí', 44.90, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200')">
+                🛒 Aproveitar Combo
+            </button>
+        </div>
+        <div class="oferta-img">
+            <img src="https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=600&q=80" alt="Combo da semana">
         </div>
     </div>
 </section>
 
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     DEPOIMENTOS — PROVA SOCIAL
-     ═══════════════════════════════════════════════════════════════════ -->
-<section class="cs-section cs-bg-off cs-reviews" id="avaliações" aria-labelledby="rev-ttl">
-    <div class="container">
-
-        <header class="cs-section-header cs-section-header--center" data-reveal>
-            <p class="cs-eyebrow">Quem prova aprova</p>
-            <h2 class="cs-section-title" id="rev-ttl">O que nossos clientes dizem</h2>
-        </header>
-
-        <div class="cs-reviews-grid">
-            <?php foreach ($depoimentos as $i => $d): ?>
-            <blockquote class="cs-review-card" data-reveal style="--delay:<?= $i * 100 ?>ms">
-                <div class="cs-review-card__stars" aria-label="5 estrelas">
-                    <?php for($s=0;$s<$d['nota'];$s++): ?><i class="bi bi-star-fill" aria-hidden="true"></i><?php endfor; ?>
+<!-- ================================
+     SOBRE
+================================ -->
+<section class="sobre" id="sobre">
+    <div class="container sobre-inner">
+        <div class="sobre-img">
+            <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80" alt="Nossa cozinha">
+        </div>
+        <div class="sobre-texto">
+            <span class="hero-tag" style="background:var(--creme);color:var(--rosa);margin-bottom:16px;display:inline-block;">Nossa história</span>
+            <h2>Feito com carinho,<br>desde o primeiro dia</h2>
+            <p>Começamos pequenos, com uma tigela de açaí e muita vontade de fazer diferente. Hoje somos a lanchonete favorita do bairro, mas sem perder a essência: comida de verdade, com ingredientes selecionados e muito afeto.</p>
+            <p>Cada item do cardápio é pensado para te surpreender. Do açaí cremoso ao smash burger perfeito — aqui, cada detalhe importa.</p>
+            <div class="sobre-itens">
+                <div class="sobre-item">
+                    <div class="num">500+</div>
+                    <div class="label">Pedidos por semana</div>
                 </div>
-                <p class="cs-review-card__text">"<?= htmlspecialchars($d['texto']) ?>"</p>
-                <footer class="cs-review-card__author">
-                    <div class="cs-review-card__avatar" aria-hidden="true">
-                        <?= $d['avatar'] ?>
-                    </div>
-                    <cite><?= htmlspecialchars($d['nome']) ?></cite>
-                </footer>
-            </blockquote>
+                <div class="sobre-item">
+                    <div class="num">4.9⭐</div>
+                    <div class="label">Avaliação média</div>
+                </div>
+                <div class="sobre-item">
+                    <div class="num">3 anos</div>
+                    <div class="label">De muito sabor</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ================================
+     DEPOIMENTOS
+================================ -->
+<section class="depoimentos">
+    <div class="container">
+        <div class="section-header">
+            <h2>O que dizem nossos clientes</h2>
+            <p>Quem prova, sempre volta</p>
+            <span class="linha-rosa"></span>
+        </div>
+        <div class="dep-grid">
+            <?php foreach ($depoimentos as $d): ?>
+            <div class="dep-card">
+                <div class="dep-estrelas"><?= str_repeat('⭐', $d['nota']) ?></div>
+                <p class="dep-texto">"<?= htmlspecialchars($d['texto']) ?>"</p>
+                <span class="dep-nome">— <?= htmlspecialchars($d['nome']) ?></span>
+            </div>
             <?php endforeach; ?>
         </div>
-
-        <!-- Resumo geral -->
-        <div class="cs-reviews-summary" data-reveal>
-            <div class="cs-reviews-summary__score">
-                <strong>4.9</strong>
-                <div class="cs-reviews-summary__stars" aria-label="4.9 de 5 estrelas">
-                    <i class="bi bi-star-fill" aria-hidden="true"></i>
-                    <i class="bi bi-star-fill" aria-hidden="true"></i>
-                    <i class="bi bi-star-fill" aria-hidden="true"></i>
-                    <i class="bi bi-star-fill" aria-hidden="true"></i>
-                    <i class="bi bi-star-half" aria-hidden="true"></i>
-                </div>
-                <span>Baseado em 380+ avaliações</span>
-            </div>
-        </div>
-
     </div>
 </section>
 
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     CTA — WHATSAPP / AÇÃO FINAL
-     ═══════════════════════════════════════════════════════════════════ -->
-<section class="cs-cta" aria-label="Peça agora pelo WhatsApp">
-    <div class="cs-cta__bg" aria-hidden="true"></div>
-    <div class="container text-center cs-cta__inner">
-        <span class="cs-cta__tag" data-reveal>🛵 Entrega em até 40 minutos</span>
-        <h2 class="cs-cta__headline" data-reveal>
-            Pronto para pedir?<br>
-            <em>A gente tá te esperando.</em>
-        </h2>
-        <p class="cs-cta__sub" data-reveal>Sem taxa de entrega no primeiro pedido. Pague no Pix ou cartão.</p>
-        <div class="cs-cta__actions" data-reveal>
-            <a href="https://wa.me/5511999999999?text=Ol%C3%A1!%20Quero%20fazer%20um%20pedido"
-               target="_blank" rel="noopener noreferrer"
-               class="cs-btn cs-btn--wa cs-btn--xl">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
-                     fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                    <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
-                </svg>
-                Chamar no WhatsApp
-            </a>
-            <a href="#cardapio" class="cs-btn cs-btn--outline-light cs-btn--xl">
-                Ver Cardápio
-            </a>
+<!-- ================================
+     CTA FINAL
+================================ -->
+<section class="cta-final">
+    <div class="container">
+        <h2>Bateu aquela fome?<br>A gente resolve agora! 🚀</h2>
+        <p>Peça pelo WhatsApp e receba em minutos. Sem complicação.</p>
+        <a href="https://wa.me/5500000000000?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" class="btn btn-wpp">
+            💬 Pedir pelo WhatsApp
+        </a>
+        <div class="cta-info">
+            <span class="cta-info-item">🕐 Entrega em até 40 min</span>
+            <span class="cta-info-item">📍 Raio de 5km</span>
+            <span class="cta-info-item">⭐ Qualidade garantida</span>
         </div>
     </div>
 </section>
 
-
-<!-- ═══════════════════════════════════════════════════════════════════
+<!-- ================================
      FOOTER
-     ═══════════════════════════════════════════════════════════════════ -->
-<footer class="cs-footer" aria-label="Rodapé">
+================================ -->
+<footer class="footer">
     <div class="container">
-        <div class="cs-footer__grid">
-
-            <!-- Marca -->
-            <div class="cs-footer__brand">
-                <a class="cs-logo cs-logo--light" href="index.php" aria-label="Canto do Sabor">
-                    <span class="cs-logo__mark" aria-hidden="true">✦</span>
-                    <span class="cs-logo__name">Canto<em>do Sabor</em></span>
-                </a>
-                <p class="cs-footer__desc">
-                    Açaí artesanal, burguers e doces feitos do zero todos os dias. Sabor de verdade.
-                </p>
-                <div class="cs-footer__social">
-                    <a href="#" aria-label="Instagram" class="cs-social-link"><i class="bi bi-instagram" aria-hidden="true"></i></a>
-                    <a href="#" aria-label="TikTok" class="cs-social-link"><i class="bi bi-tiktok" aria-hidden="true"></i></a>
-                    <a href="#" aria-label="Facebook" class="cs-social-link"><i class="bi bi-facebook" aria-hidden="true"></i></a>
-                    <a href="https://wa.me/5511999999999" aria-label="WhatsApp" class="cs-social-link cs-social-link--wa"><i class="bi bi-whatsapp" aria-hidden="true"></i></a>
+        <div class="footer-grid">
+            <div>
+                <div class="footer-logo">Sabor<span>&</span>Cia</div>
+                <p class="footer-desc">Açaí, hambúrgueres artesanais, doces e bebidas geladas. Tudo com muito amor e sabor.</p>
+                <div class="footer-social">
+                    <a href="#" class="soc-btn">📸</a>
+                    <a href="#" class="soc-btn">📘</a>
+                    <a href="#" class="soc-btn">🎵</a>
                 </div>
             </div>
-
-            <!-- Navegação -->
-            <div class="cs-footer__col">
-                <h3 class="cs-footer__col-title">Menu</h3>
-                <ul class="cs-footer__links">
-                    <li><a href="#inicio">Início</a></li>
-                    <li><a href="#cardapio">Cardápio</a></li>
-                    <li><a href="#ofertas">Ofertas</a></li>
-                    <li><a href="#sobre">Nossa história</a></li>
+            <div>
+                <h4>Cardápio</h4>
+                <ul>
+                    <li><a href="#">Açaí</a></li>
+                    <li><a href="#">Hambúrgueres</a></li>
+                    <li><a href="#">Doces</a></li>
+                    <li><a href="#">Bebidas</a></li>
+                    <li><a href="#">Combos</a></li>
                 </ul>
             </div>
-
-            <!-- Categorias -->
-            <div class="cs-footer__col">
-                <h3 class="cs-footer__col-title">Categorias</h3>
-                <ul class="cs-footer__links">
-                    <?php foreach ($categorias as $c): ?>
-                    <li><a href="#cardapio"><?= $c['emoji'] ?> <?= htmlspecialchars($c['nome']) ?></a></li>
-                    <?php endforeach; ?>
+            <div>
+                <h4>Contato</h4>
+                <ul>
+                    <li><a href="#">📲 WhatsApp</a></li>
+                    <li><a href="#">📍 Rua das Flores, 123</a></li>
+                    <li><a href="#">🕐 Seg–Dom, 11h–23h</a></li>
+                    <li><a href="#">📧 contato@saborecia.com</a></li>
                 </ul>
             </div>
-
-            <!-- Contato -->
-            <div class="cs-footer__col">
-                <h3 class="cs-footer__col-title">Contato</h3>
-                <ul class="cs-footer__contact">
-                    <li><i class="bi bi-geo-alt-fill" aria-hidden="true"></i><span>Rua das Flores, 342 — Centro</span></li>
-                    <li><i class="bi bi-telephone-fill" aria-hidden="true"></i><a href="tel:+5511999999999">(11) 9 9999-9999</a></li>
-                    <li><i class="bi bi-clock-fill" aria-hidden="true"></i><span>Seg–Dom: 10h às 23h</span></li>
-                    <li><i class="bi bi-envelope-fill" aria-hidden="true"></i><a href="mailto:oi@cantodosabor.com.br">oi@cantodosabor.com.br</a></li>
-                </ul>
-            </div>
-
         </div>
-
-        <div class="cs-footer__bottom">
-            <p>© <?= date('Y') ?> Canto do Sabor. Todos os direitos reservados.</p>
-            <p>Desenvolvido com <span aria-label="amor">❤️</span> pela equipe CS</p>
-        </div>
+        <p class="footer-copy">© <?= date('Y') ?> Sabor&Cia — Todos os direitos reservados.</p>
     </div>
 </footer>
 
-
-<!-- ═══════════════════════════════════════════════════════════════════
-     OFFCANVAS — CARRINHO
-     ═══════════════════════════════════════════════════════════════════ -->
-<div class="offcanvas offcanvas-end cs-drawer"
-     tabindex="-1"
-     id="cartDrawer"
-     aria-labelledby="cartDrawerTitle">
-    <div class="offcanvas-header cs-drawer__header">
-        <h2 class="cs-drawer__title" id="cartDrawerTitle">
-            <i class="bi bi-bag-heart me-2" aria-hidden="true"></i> Meu Carrinho
-        </h2>
-        <button type="button" class="cs-drawer__close"
-                data-bs-dismiss="offcanvas" aria-label="Fechar carrinho">
-            <i class="bi bi-x-lg" aria-hidden="true"></i>
+<!-- ================================
+     CARRINHO SIDEBAR
+================================ -->
+<div class="cart-overlay" id="cartOverlay" onclick="fecharCart()"></div>
+<div class="cart-sidebar" id="cartSidebar">
+    <div class="cart-head">
+        <h3>🛒 Meu Carrinho</h3>
+        <button class="cart-close" onclick="fecharCart()">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems">
+        <p class="cart-empty">Seu carrinho está vazio.<br>Adicione algo gostoso! 😋</p>
+    </div>
+    <div class="cart-foot">
+        <div class="cart-total">
+            <span>Total</span>
+            <span id="cartTotal">R$ 0,00</span>
+        </div>
+        <button class="btn btn-wpp" style="width:100%;justify-content:center;" id="btnFinalizarWpp">
+            💬 Finalizar pelo WhatsApp
         </button>
     </div>
-    <div class="offcanvas-body cs-drawer__body">
-        <div id="cart-items" role="list" aria-live="polite"></div>
-        <div class="cs-drawer__empty" id="cart-empty">
-            <span aria-hidden="true">🛒</span>
-            <p>Seu carrinho está vazio</p>
-            <a href="#cardapio" class="cs-btn cs-btn--primary cs-btn--sm" data-bs-dismiss="offcanvas">
-                Ver produtos
-            </a>
-        </div>
-    </div>
-    <div class="cs-drawer__foot" id="cart-foot" hidden>
-        <div class="cs-drawer__total">
-            <span>Total do pedido</span>
-            <strong id="cart-total">R$ 0,00</strong>
-        </div>
-        <a href="https://wa.me/5511999999999"
-           target="_blank" id="cart-wa-link"
-           class="cs-btn cs-btn--wa cs-btn--lg w-100">
-            <i class="bi bi-whatsapp me-2" aria-hidden="true"></i>
-            Finalizar pelo WhatsApp
-        </a>
-    </div>
 </div>
 
+<!-- Toast notificação -->
+<div class="toast" id="toast">✅ Adicionado ao carrinho!</div>
 
-<!-- WhatsApp flutuante -->
-<a href="https://wa.me/5511999999999?text=Ol%C3%A1!%20Quero%20fazer%20um%20pedido"
-   target="_blank" rel="noopener noreferrer"
-   class="cs-wa-float" aria-label="Abrir WhatsApp">
-    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26"
-         fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-        <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
-    </svg>
-</a>
+<script>
+// ================================
+// ESTADO DO CARRINHO
+// ================================
+let carrinho = [];
+let totalItens = 0;
 
-<!-- Notificação toast -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index:1200">
-    <div id="cs-toast" class="toast cs-toast align-items-center" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-            <div class="toast-body" id="cs-toast-msg">Item adicionado!</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Fechar"></button>
-        </div>
-    </div>
-</div>
+// ================================
+// NAVBAR SCROLL
+// ================================
+window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 30);
+});
 
+// ================================
+// CARRINHO - ABRIR / FECHAR
+// ================================
+document.getElementById('btnAbrirCart').addEventListener('click', abrirCart);
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../assets/js/script.js"></script>
+function abrirCart() {
+    document.getElementById('cartSidebar').classList.add('open');
+    document.getElementById('cartOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function fecharCart() {
+    document.getElementById('cartSidebar').classList.remove('open');
+    document.getElementById('cartOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+}
 
+// ================================
+// ADICIONAR AO CARRINHO
+// ================================
+function adicionarCarrinho(id, nome, preco, img) {
+    const existente = carrinho.find(i => i.id === id);
+    if (existente) {
+        existente.qtd++;
+    } else {
+        carrinho.push({ id, nome, preco, img, qtd: 1 });
+    }
+    totalItens++;
+    atualizarUI();
+    mostrarToast('✅ ' + nome + ' adicionado!');
+}
+
+function removerCarrinho(id) {
+    const idx = carrinho.findIndex(i => i.id === id);
+    if (idx !== -1) {
+        totalItens -= carrinho[idx].qtd;
+        carrinho.splice(idx, 1);
+        atualizarUI();
+    }
+}
+
+// ================================
+// ATUALIZAR UI
+// ================================
+function atualizarUI() {
+    // Badge
+    const badge = document.getElementById('cartBadge');
+    badge.textContent = totalItens;
+    badge.style.display = totalItens > 0 ? 'flex' : 'none';
+
+    // Items
+    const container = document.getElementById('cartItems');
+    if (carrinho.length === 0) {
+        container.innerHTML = '<p class="cart-empty">Seu carrinho está vazio.<br>Adicione algo gostoso! 😋</p>';
+    } else {
+        container.innerHTML = carrinho.map(item => `
+            <div class="cart-item">
+                <div class="cart-item-img">
+                    <img src="${item.img}" alt="${item.nome}" style="height:56px;object-fit:cover;">
+                </div>
+                <div class="cart-item-info">
+                    <div class="cart-item-nome">${item.nome} ${item.qtd > 1 ? '×' + item.qtd : ''}</div>
+                    <div class="cart-item-preco">R$ ${(item.preco * item.qtd).toFixed(2).replace('.', ',')}</div>
+                </div>
+                <button class="cart-item-rm" onclick="removerCarrinho(${item.id})">🗑️</button>
+            </div>
+        `).join('');
+    }
+
+    // Total
+    const total = carrinho.reduce((s, i) => s + i.preco * i.qtd, 0);
+    document.getElementById('cartTotal').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+
+    // Link WPP
+    const pedido = carrinho.map(i => `${i.qtd}x ${i.nome}`).join(', ');
+    const msg = encodeURIComponent(`Olá! Quero fazer um pedido:\n${pedido}\nTotal: R$ ${total.toFixed(2).replace('.', ',')}`);
+    document.getElementById('btnFinalizarWpp').onclick = () => {
+        window.open(`https://wa.me/5500000000000?text=${msg}`, '_blank');
+    };
+}
+
+// ================================
+// TOAST
+// ================================
+function mostrarToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ================================
+// FILTRO POR CATEGORIA
+// ================================
+function filtrarProdutos(cat) {
+    const cards = document.querySelectorAll('.prod-card');
+    cards.forEach(c => {
+        const visivel = c.dataset.categoria === cat;
+        c.style.display = visivel ? 'block' : 'none';
+    });
+    // Scroll suave até os produtos
+    document.getElementById('produtos').scrollIntoView({ behavior: 'smooth' });
+    // Resetar depois de 4s
+    setTimeout(() => cards.forEach(c => c.style.display = 'block'), 4000);
+}
+
+// ================================
+// BADGE INICIAL
+// ================================
+document.getElementById('cartBadge').style.display = 'none';
+</script>
 </body>
 </html>
