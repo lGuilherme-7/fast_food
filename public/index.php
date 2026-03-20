@@ -898,7 +898,7 @@ $depoimentos = [
         <p>Açaí cremoso, burgers artesanais, doces incríveis e bebidas geladas. Tudo feito com amor, entregue na sua porta.</p>
         <div class="hero-btns">
             <a href="#cardapio" class="btn btn-primary">🍽️ Ver Cardápio</a>
-            <a href="https://wa.me/5500000000000?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" class="btn btn-outline">📲 Pedir Agora</a>
+            <a href="https://wa.me/5581987028550?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" class="btn btn-outline">📲 Pedir Agora</a>
         </div>
     </div>
 </section>
@@ -1040,7 +1040,7 @@ $depoimentos = [
     <div class="container">
         <h2>Bateu aquela fome?<br>A gente resolve agora! 🚀</h2>
         <p>Peça pelo WhatsApp e receba em minutos. Sem complicação.</p>
-        <a href="https://wa.me/5500000000000?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" class="btn btn-wpp">
+        <a href="https://wa.me/5581987028550?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" class="btn btn-wpp">
             💬 Pedir pelo WhatsApp
         </a>
         <div class="cta-info">
@@ -1206,7 +1206,7 @@ function atualizarUI() {
     const pedido = carrinho.map(i => `${i.qtd}x ${i.nome}`).join(', ');
     const msg = encodeURIComponent(`Olá! Quero fazer um pedido:\n${pedido}\nTotal: R$ ${total.toFixed(2).replace('.', ',')}`);
     document.getElementById('btnFinalizarWpp').onclick = () => {
-        window.open(`https://wa.me/5500000000000?text=${msg}`, '_blank');
+        window.open(`https://wa.me/5581987028550?text=${msg}`, '_blank');
     };
 }
 
