@@ -1,954 +1,113 @@
 <?php
-// =============================================
-// DADOS SIMULADOS - Substituir por banco depois
-// =============================================
-$produtos_destaque = [
-    [
-        "id" => 1,
-        "nome" => "Açaí Premium 500ml",
-        "preco" => 18.90,
-        "categoria" => "acai",
-        "imagem" => "https://images.unsplash.com/photo-1590301157890-4810ed352733?w=400&q=80",
-        "destaque" => true
-    ],
-    [
-        "id" => 2,
-        "nome" => "Hambúrguer Smash",
-        "preco" => 29.90,
-        "categoria" => "hamburguer",
-        "imagem" => "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&q=80",
-        "destaque" => true
-    ],
-    [
-        "id" => 3,
-        "nome" => "Bolo de Pote Ninho",
-        "preco" => 14.90,
-        "categoria" => "doces",
-        "imagem" => "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=400&q=80",
-        "destaque" => true
-    ],
-    [
-        "id" => 4,
-        "nome" => "Milkshake Oreo",
-        "preco" => 16.90,
-        "categoria" => "bebidas",
-        "imagem" => "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&q=80",
-        "destaque" => true
-    ],
-    [
-        "id" => 5,
-        "nome" => "Açaí Tradicional 300ml",
-        "preco" => 12.90,
-        "categoria" => "acai",
-        "imagem" => "https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&q=80",
-        "destaque" => true
-    ],
-    [
-        "id" => 6,
-        "nome" => "Combo Smash Duplo",
-        "preco" => 42.90,
-        "categoria" => "hamburguer",
-        "imagem" => "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400&q=80",
-        "destaque" => true
-    ],
+// ============================================
+// DADOS SIMULADOS — trocar por banco depois
+// ============================================
+$produtos = [
+    ["id"=>1,"nome"=>"Açaí Premium 500ml",    "preco"=>18.90,"categoria"=>"acai",      "imagem"=>"https://images.unsplash.com/photo-1590301157890-4810ed352733?w=600&q=80"],
+    ["id"=>2,"nome"=>"Hambúrguer Smash",       "preco"=>29.90,"categoria"=>"hamburguer","imagem"=>"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&q=80"],
+    ["id"=>3,"nome"=>"Bolo de Pote Ninho",     "preco"=>14.90,"categoria"=>"doces",     "imagem"=>"https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=600&q=80"],
+    ["id"=>4,"nome"=>"Milkshake Oreo",         "preco"=>16.90,"categoria"=>"bebidas",   "imagem"=>"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&q=80"],
+    ["id"=>5,"nome"=>"Açaí Tradicional 300ml", "preco"=>12.90,"categoria"=>"acai",      "imagem"=>"https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=600&q=80"],
+    ["id"=>6,"nome"=>"Combo Smash Duplo",      "preco"=>42.90,"categoria"=>"hamburguer","imagem"=>"https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=600&q=80"],
 ];
 
 $categorias = [
-    ["slug" => "acai",      "nome" => "Açaí",       "emoji" => "🍇", "cor" => "#7c3aed"],
-    ["slug" => "hamburguer","nome" => "Hambúrguer",  "emoji" => "🍔", "cor" => "#ea580c"],
-    ["slug" => "doces",     "nome" => "Doces",       "emoji" => "🍰", "cor" => "#ec4899"],
-    ["slug" => "bebidas",   "nome" => "Bebidas",     "emoji" => "🥤", "cor" => "#0ea5e9"],
+    ["slug"=>"acai",      "nome"=>"Açaí",      "img"=>"https://images.unsplash.com/photo-1590301157890-4810ed352733?w=120&q=80"],
+    ["slug"=>"hamburguer","nome"=>"Hambúrguer", "img"=>"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=120&q=80"],
+    ["slug"=>"doces",     "nome"=>"Doces",      "img"=>"https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?w=120&q=80"],
+    ["slug"=>"bebidas",   "nome"=>"Bebidas",    "img"=>"https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=120&q=80"],
 ];
 
 $depoimentos = [
-    ["nome" => "Ana Clara",   "texto" => "Melhor açaí da cidade! Sempre fresquinho e cheio de sabor.", "nota" => 5],
-    ["nome" => "Rafael M.",   "texto" => "O smash burger é incrível, já virei cliente fiel mesmo.",    "nota" => 5],
-    ["nome" => "Juliana P.",  "texto" => "Atendimento rápido e os bolos de pote são demais!",          "nota" => 5],
+    ["nome"=>"Ana Clara",  "texto"=>"Melhor açaí da cidade! Sempre fresquinho e cheio de sabor.", "nota"=>5],
+    ["nome"=>"Rafael M.",  "texto"=>"O smash burger é incrível, já virei cliente fiel mesmo.",    "nota"=>5],
+    ["nome"=>"Juliana P.", "texto"=>"Atendimento rápido e os bolos de pote são demais!",          "nota"=>5],
 ];
 ?>
-
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sabor & Cia — Açaí, Burgers, Doces e Bebidas</title>
+    <title>Sabor &amp; Cia — Açaí, Burgers, Doces e Bebidas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-
-
-    <style>
-        /* ================================
-           RESET & VARIÁVEIS
-        ================================ */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-            --rosa:       #f43f7a;
-            --rosa-claro: #fce7f0;
-            --roxo:       #7c3aed;
-            --laranja:    #ff6b2c;
-            --creme:      #fff8f4;
-            --branco:     #ffffff;
-            --escuro:     #1a1014;
-            --cinza:      #6b7280;
-            --borda:      #e5e7eb;
-
-            --font-titulo: 'Playfair Display', Georgia, serif;
-            --font-corpo:  'DM Sans', sans-serif;
-
-            --r: 12px;
-            --sombra: 0 4px 24px rgba(0,0,0,.08);
-            --sombra-hover: 0 8px 32px rgba(0,0,0,.14);
-        }
-
-        html { scroll-behavior: smooth; }
-
-        body {
-            font-family: var(--font-corpo);
-            color: var(--escuro);
-            background: var(--branco);
-            overflow-x: hidden;
-        }
-
-        img{ 
-            display: block; 
-            width: 100%; 
-            object-fit: cover; 
-        }
-
-        a{ 
-            text-decoration: none; 
-            color: inherit; 
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1140px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
-        /* ================================
-           BOTÕES
-        ================================ */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 28px;
-            border-radius: 50px;
-            font-family: var(--font-corpo);
-            font-weight: 600;
-            font-size: .95rem;
-            cursor: pointer;
-            border: none;
-            transition: transform .2s ease, box-shadow .2s ease;
-        }
-        .btn:hover { transform: translateY(-2px); box-shadow: var(--sombra-hover); }
-        .btn:active { transform: translateY(0); }
-
-        .btn-primary {
-            background: var(--rosa);
-            color: #fff;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 2px solid #fff;
-            color: #fff;
-        }
-        .btn-wpp {
-            background: #25D366;
-            color: #fff;
-            font-size: 1.05rem;
-            padding: 16px 36px;
-        }
-        .btn-dark {
-            background: var(--escuro);
-            color: #fff;
-        }
-
-        /* ================================
-           NAVBAR
-        ================================ */
-        .navbar {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 999;
-            background: rgba(255,255,255,.92);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--borda);
-            transition: box-shadow .3s;
-        }
-        .navbar.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,.08); }
-
-        .nav-inner {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 100px;
-        }
-
-        .nav-logo {
-            font-family: var(--font-titulo);
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: var(--escuro);
-            letter-spacing: -.5px;
-        }
-        .nav-logo span { color: var(--rosa); }
-
-        .nav-links {
-            display: flex;
-            gap: 32px;
-            list-style: none;
-        }
-        .nav-links a {
-            font-weight: 500;
-            font-size: .9rem;
-            color: var(--cinza);
-            transition: color .2s;
-        }
-        .nav-links a:hover { color: var(--rosa); }
-
-        .nav-actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .nav-cart {
-            position: relative;
-            background: var(--rosa-claro);
-            border: none;
-            width: 42px; height: 42px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            transition: background .2s;
-        }
-        .nav-cart:hover { background: var(--rosa); }
-        .nav-cart:hover .cart-icon { filter: brightness(10); }
-        .cart-icon { font-size: 1.1rem; }
-
-        .cart-badge {
-            position: absolute;
-            top: -4px; right: -4px;
-            background: var(--rosa);
-            color: #fff;
-            font-size: .65rem;
-            font-weight: 700;
-            width: 18px; height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #fff;
-        }
-
-        .nav-hamburger {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        /* ================================
-           HERO
-        ================================ */
-        .hero {
-            min-height: 100vh;
-            background: url('https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=1400&q=80') center/cover no-repeat;
-            display: flex;
-            align-items: center;
-            position: relative;
-        }
-        .hero::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(20,5,10,.75) 0%, rgba(20,5,10,.45) 100%);
-        }
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 600px;
-            padding-top: 64px;
-        }
-        .hero-tag {
-            display: inline-block;
-            background: var(--rosa);
-            color: #fff;
-            font-size: .78rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            padding: 6px 16px;
-            border-radius: 50px;
-            margin-bottom: 20px;
-        }
-        .hero h1 {
-            font-family: var(--font-titulo);
-            font-size: clamp(2.4rem, 6vw, 3.8rem);
-            line-height: 1.1;
-            color: #fff;
-            margin-bottom: 18px;
-        }
-        .hero h1 em {
-            font-style: normal;
-            color: var(--rosa);
-        }
-        .hero p {
-            color: rgba(255,255,255,.8);
-            font-size: 1.05rem;
-            line-height: 1.7;
-            margin-bottom: 32px;
-            max-width: 480px;
-        }
-        .hero-btns {
-            display: flex;
-            gap: 14px;
-            flex-wrap: wrap;
-        }
-
-        /* ================================
-           CATEGORIAS
-        ================================ */
-        .categorias {
-            background: var(--branco);
-            padding: 72px 0 56px;
-        }
-        .section-header {
-            text-align: center;
-            margin-bottom: 44px;
-        }
-        .section-header h2 {
-            font-family: var(--font-titulo);
-            font-size: clamp(1.8rem, 4vw, 2.6rem);
-            line-height: 1.2;
-            margin-bottom: 10px;
-        }
-        .section-header p {
-            color: var(--cinza);
-            font-size: .95rem;
-        }
-        .linha-rosa {
-            display: inline-block;
-            width: 48px; height: 3px;
-            background: var(--rosa);
-            border-radius: 2px;
-            margin: 12px auto 0;
-        }
-
-        .cat-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
-        .cat-card {
-            background: var(--creme);
-            border-radius: var(--r);
-            padding: 32px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: transform .25s ease, box-shadow .25s ease;
-            border: 2px solid transparent;
-        }
-        .cat-card:hover {
-            transform: translateY(-6px);
-            box-shadow: var(--sombra-hover);
-            border-color: var(--rosa);
-        }
-        .cat-emoji {
-            font-size: 2.8rem;
-            margin-bottom: 12px;
-            display: block;
-        }
-        .cat-card h3 {
-            font-size: 1rem;
-            font-weight: 600;
-        }
-        .cat-card p {
-            font-size: .82rem;
-            color: var(--cinza);
-            margin-top: 4px;
-        }
-
-        /* ================================
-           PRODUTOS EM DESTAQUE
-        ================================ */
-        .produtos {
-            background: var(--rosa-claro);
-            padding: 72px 0;
-        }
-        .prod-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-        }
-        .prod-card {
-            background: var(--branco);
-            border-radius: var(--r);
-            overflow: hidden;
-            box-shadow: var(--sombra);
-            transition: transform .25s ease, box-shadow .25s ease;
-        }
-        .prod-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--sombra-hover);
-        }
-        .prod-img {
-            height: 190px;
-            overflow: hidden;
-        }
-        .prod-img img {
-            height: 100%;
-            transition: transform .4s ease;
-        }
-        .prod-card:hover .prod-img img { transform: scale(1.06); }
-
-        .prod-body {
-            padding: 18px 18px 20px;
-        }
-        .prod-nome {
-            font-weight: 600;
-            font-size: .95rem;
-            margin-bottom: 6px;
-        }
-        .prod-preco {
-            font-family: var(--font-titulo);
-            font-size: 1.3rem;
-            color: var(--rosa);
-            font-weight: 700;
-            margin-bottom: 14px;
-        }
-        .btn-add {
-            width: 100%;
-            padding: 11px;
-            border-radius: 8px;
-            background: var(--escuro);
-            color: #fff;
-            border: none;
-            font-family: var(--font-corpo);
-            font-weight: 600;
-            font-size: .88rem;
-            cursor: pointer;
-            transition: background .2s, transform .15s;
-        }
-        .btn-add:hover { background: var(--rosa); transform: scale(1.02); }
-
-        /* ================================
-           OFERTA
-        ================================ */
-        .oferta {
-            background: var(--escuro);
-            padding: 72px 0;
-            position: relative;
-            overflow: hidden;
-        }
-        .oferta::before {
-            content: '';
-            position: absolute;
-            width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(244,63,122,.18) 0%, transparent 70%);
-            top: -120px; right: -80px;
-            pointer-events: none;
-        }
-        .oferta-inner {
-            display: flex;
-            align-items: center;
-            gap: 60px;
-        }
-        .oferta-texto { flex: 1; }
-        .oferta-badge {
-            display: inline-block;
-            background: var(--rosa);
-            color: #fff;
-            font-size: .75rem;
-            font-weight: 700;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            padding: 5px 14px;
-            border-radius: 50px;
-            margin-bottom: 16px;
-        }
-        .oferta-texto h2 {
-            font-family: var(--font-titulo);
-            font-size: clamp(1.8rem, 4vw, 2.8rem);
-            color: #fff;
-            line-height: 1.15;
-            margin-bottom: 14px;
-        }
-        .oferta-texto h2 span { color: var(--rosa); }
-        .oferta-texto p {
-            color: rgba(255,255,255,.65);
-            line-height: 1.7;
-            margin-bottom: 28px;
-            font-size: .95rem;
-        }
-        .oferta-preco {
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-            margin-bottom: 28px;
-        }
-        .oferta-de {
-            color: rgba(255,255,255,.4);
-            text-decoration: line-through;
-            font-size: 1.1rem;
-        }
-        .oferta-por {
-            font-family: var(--font-titulo);
-            font-size: 2.6rem;
-            color: var(--rosa);
-            font-weight: 700;
-        }
-        .oferta-img {
-            flex: 0 0 360px;
-            height: 300px;
-            border-radius: var(--r);
-            overflow: hidden;
-        }
-
-        /* ================================
-           SOBRE / HISTÓRIA
-        ================================ */
-        .sobre {
-            background: var(--branco);
-            padding: 80px 0;
-        }
-        .sobre-inner {
-            display: flex;
-            align-items: center;
-            gap: 64px;
-        }
-        .sobre-img {
-            flex: 0 0 45%;
-            height: 400px;
-            border-radius: var(--r);
-            overflow: hidden;
-        }
-        .sobre-texto { flex: 1; }
-        .sobre-texto h2 {
-            font-family: var(--font-titulo);
-            font-size: clamp(1.8rem, 3.5vw, 2.4rem);
-            line-height: 1.2;
-            margin-bottom: 16px;
-        }
-        .sobre-texto p {
-            color: var(--cinza);
-            line-height: 1.8;
-            margin-bottom: 14px;
-            font-size: .95rem;
-        }
-        .sobre-itens {
-            display: flex;
-            gap: 20px;
-            margin-top: 28px;
-        }
-        .sobre-item {
-            flex: 1;
-            text-align: center;
-            padding: 16px;
-            background: var(--creme);
-            border-radius: 10px;
-        }
-        .sobre-item .num {
-            font-family: var(--font-titulo);
-            font-size: 1.8rem;
-            color: var(--rosa);
-            font-weight: 700;
-        }
-        .sobre-item .label {
-            font-size: .78rem;
-            color: var(--cinza);
-            margin-top: 2px;
-        }
-
-        /* ================================
-           DEPOIMENTOS
-        ================================ */
-        .depoimentos {
-            background: var(--creme);
-            padding: 72px 0;
-        }
-        .dep-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 22px;
-            margin-top: 44px;
-        }
-        .dep-card {
-            background: var(--branco);
-            border-radius: var(--r);
-            padding: 28px 24px;
-            box-shadow: var(--sombra);
-        }
-        .dep-estrelas { color: #f59e0b; font-size: 1rem; margin-bottom: 12px; }
-        .dep-texto {
-            font-size: .92rem;
-            color: var(--escuro);
-            line-height: 1.7;
-            margin-bottom: 16px;
-            font-style: italic;
-        }
-        .dep-nome { font-weight: 600; font-size: .85rem; color: var(--cinza); }
-
-        /* ================================
-           CTA FINAL
-        ================================ */
-        .cta-final {
-            background: linear-gradient(135deg, var(--rosa) 0%, #c2185b 100%);
-            padding: 88px 0;
-            text-align: center;
-        }
-        .cta-final h2 {
-            font-family: var(--font-titulo);
-            font-size: clamp(2rem, 5vw, 3.2rem);
-            color: #fff;
-            line-height: 1.15;
-            margin-bottom: 14px;
-        }
-        .cta-final p {
-            color: rgba(255,255,255,.8);
-            font-size: 1rem;
-            margin-bottom: 36px;
-        }
-        .cta-info {
-            display: flex;
-            justify-content: center;
-            gap: 36px;
-            margin-top: 36px;
-        }
-        .cta-info-item {
-            color: rgba(255,255,255,.8);
-            font-size: .88rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* ================================
-           FOOTER
-        ================================ */
-        .footer {
-            background: var(--escuro);
-            padding: 56px 0 28px;
-        }
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 48px;
-            padding-bottom: 40px;
-            border-bottom: 1px solid rgba(255,255,255,.08);
-        }
-        .footer-logo {
-            font-family: var(--font-titulo);
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: #fff;
-            margin-bottom: 12px;
-        }
-        .footer-logo span { color: var(--rosa); }
-        .footer-desc {
-            color: rgba(255,255,255,.5);
-            font-size: .88rem;
-            line-height: 1.7;
-            margin-bottom: 20px;
-        }
-        .footer-social { display: flex; gap: 10px; }
-        .soc-btn {
-            width: 36px; height: 36px;
-            border-radius: 8px;
-            background: rgba(255,255,255,.08);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: .95rem;
-            transition: background .2s;
-        }
-        .soc-btn:hover { background: var(--rosa); }
-
-        .footer h4 {
-            color: #fff;
-            font-size: .85rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 18px;
-        }
-        .footer ul { list-style: none; }
-        .footer ul li { margin-bottom: 10px; }
-        .footer ul a {
-            color: rgba(255,255,255,.5);
-            font-size: .88rem;
-            transition: color .2s;
-        }
-        .footer ul a:hover { color: var(--rosa); }
-        .footer-copy {
-            text-align: center;
-            color: rgba(255,255,255,.3);
-            font-size: .8rem;
-            padding-top: 28px;
-        }
-
-        /* ================================
-           CARRINHO SIDEBAR
-        ================================ */
-        .cart-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.5);
-            z-index: 1100;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .3s;
-        }
-        .cart-overlay.open { opacity: 1; pointer-events: all; }
-
-        .cart-sidebar {
-            position: fixed;
-            top: 0; right: -380px;
-            width: 360px;
-            height: 100vh;
-            background: var(--branco);
-            z-index: 1200;
-            transition: right .35s cubic-bezier(.4,0,.2,1);
-            display: flex;
-            flex-direction: column;
-        }
-        .cart-sidebar.open { right: 0; }
-        .cart-head {
-            padding: 22px 22px 16px;
-            border-bottom: 1px solid var(--borda);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .cart-head h3 {
-            font-family: var(--font-titulo);
-            font-size: 1.3rem;
-        }
-        .cart-close {
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: var(--cinza);
-        }
-        .cart-items {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px 22px;
-        }
-        .cart-empty {
-            text-align: center;
-            color: var(--cinza);
-            padding: 48px 0;
-            font-size: .95rem;
-        }
-        .cart-item {
-            display: flex;
-            gap: 14px;
-            align-items: center;
-            padding: 14px 0;
-            border-bottom: 1px solid var(--borda);
-        }
-        .cart-item-img {
-            width: 56px; height: 56px;
-            border-radius: 8px;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-        .cart-item-info { flex: 1; }
-        .cart-item-nome { font-weight: 600; font-size: .9rem; }
-        .cart-item-preco { color: var(--rosa); font-weight: 700; font-size: .9rem; }
-        .cart-item-rm {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--cinza);
-            font-size: 1.1rem;
-        }
-        .cart-foot {
-            padding: 20px 22px;
-            border-top: 1px solid var(--borda);
-        }
-        .cart-total {
-            display: flex;
-            justify-content: space-between;
-            font-weight: 700;
-            font-size: 1rem;
-            margin-bottom: 16px;
-        }
-        .cart-total span:last-child { color: var(--rosa); font-family: var(--font-titulo); font-size: 1.2rem; }
-
-        /* ================================
-           TOAST
-        ================================ */
-        .toast {
-            position: fixed;
-            bottom: 24px; left: 50%;
-            transform: translateX(-50%) translateY(80px);
-            background: var(--escuro);
-            color: #fff;
-            padding: 14px 24px;
-            border-radius: 50px;
-            font-size: .9rem;
-            font-weight: 500;
-            z-index: 2000;
-            opacity: 0;
-            transition: all .35s cubic-bezier(.4,0,.2,1);
-            white-space: nowrap;
-        }
-        .toast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* ================================
-           RESPONSIVIDADE
-        ================================ */
-        @media (max-width: 900px) {
-            .nav-links { display: none; }
-            .nav-hamburger { display: block; }
-
-            .cat-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .prod-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .oferta-inner { flex-direction: column; gap: 36px; }
-            .oferta-img { flex: none; width: 100%; height: 220px; }
-
-            .sobre-inner { flex-direction: column; gap: 36px; }
-            .sobre-img { flex: none; width: 100%; height: 260px; }
-
-            .dep-grid { grid-template-columns: 1fr; }
-
-            .footer-grid { grid-template-columns: 1fr 1fr; }
-
-            .cta-info { flex-direction: column; gap: 12px; align-items: center; }
-        }
-
-        @media (max-width: 580px) {
-            .prod-grid { grid-template-columns: 1fr; }
-            .cat-grid {
-                display: flex;
-                overflow-x: auto;
-                gap: 14px;
-                scroll-snap-type: x mandatory;
-                padding-bottom: 8px;
-                -webkit-overflow-scrolling: touch;
-            }
-            .cat-card {
-                min-width: 150px;
-                scroll-snap-align: start;
-                flex-shrink: 0;
-            }
-            .hero-btns { flex-direction: column; }
-            .hero-btns .btn { text-align: center; justify-content: center; }
-            .sobre-itens { flex-direction: column; }
-            .footer-grid { grid-template-columns: 1fr; gap: 32px; }
-            .cart-sidebar { width: 100%; }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/public.css">
 </head>
 <body>
 
-<!-- ================================
-     NAVBAR
-================================ -->
+<!-- NAVBAR -->
 <nav class="navbar" id="navbar">
     <div class="container nav-inner">
-        <a href="#" class="nav-logo">Sabor<span>&</span>Cia</a>
-
+        <a href="#inicio" class="nav-logo">Sabor<span>&</span>Cia</a>
         <ul class="nav-links">
             <li><a href="#inicio">Início</a></li>
             <li><a href="#cardapio">Cardápio</a></li>
             <li><a href="#ofertas">Ofertas</a></li>
             <li><a href="#sobre">Sobre</a></li>
         </ul>
-
-        <div class="nav-actions">
-            <button class="nav-cart" id="btnAbrirCart" aria-label="Abrir carrinho">
-                <span class="cart-icon">🛒</span>
-                <span class="cart-badge" id="cartBadge">0</span>
-            </button>
-            <button class="nav-hamburger" id="navHamburger">☰</button>
-        </div>
+        <button class="nav-cart" id="btnAbrirCart" aria-label="Carrinho">
+            <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span class="cart-badge" id="cartBadge"></span>
+        </button>
     </div>
 </nav>
 
-<!-- ================================
-     HERO
-================================ -->
+<!-- HERO -->
 <section class="hero" id="inicio">
     <div class="container hero-content">
-        <span class="hero-tag">✨ Fresquinho todo dia</span>
+        <span class="hero-tag">Fresquinho todo dia</span>
         <h1>O sabor que conquista desde a <em>primeira mordida</em></h1>
-        <p>Açaí cremoso, burgers artesanais, doces incríveis e bebidas geladas. Tudo feito com amor, entregue na sua porta.</p>
+        <p>Açaí cremoso, burgers artesanais, doces incríveis e bebidas geladas. Feito com amor, entregue na sua porta.</p>
         <div class="hero-btns">
-            <a href="#cardapio" class="btn btn-primary">🍽️ Ver Cardápio</a>
-            <a href="https://wa.me/5581987028550?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" class="btn btn-outline">📲 Pedir Agora</a>
+            <a href="#cardapio" class="btn btn-rosa">Ver cardápio</a>
+            <a href="https://wa.me/5581987028550?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" rel="noopener" class="btn btn-ghost">Pedir agora</a>
         </div>
     </div>
 </section>
 
-<!-- ================================
-     CATEGORIAS
-================================ -->
+<!-- CATEGORIAS -->
 <section class="categorias" id="cardapio">
     <div class="container">
-        <div class="section-header">
+        <div class="sec-header">
             <h2>O que você quer hoje?</h2>
-            <p>Escolha a sua favorita e já vai!</p>
-            <span class="linha-rosa"></span>
+            <p>Toque numa categoria para filtrar</p>
+            <span class="sec-linha"></span>
         </div>
-
-        <div class="cat-grid">
-            <?php foreach ($categorias as $cat): ?>
-            <div class="cat-card" onclick="filtrarProdutos('<?= $cat['slug'] ?>')">
-                <span class="cat-emoji"><?= $cat['emoji'] ?></span>
-                <h3><?= $cat['nome'] ?></h3>
-                <p>Ver todos</p>
+        <div class="cat-scroll">
+            <div class="cat-card ativo" data-cat="todos" onclick="filtrar(this,'todos')">
+                <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=120&q=80" alt="Todos">
+                <span>Tudo</span>
+            </div>
+            <?php foreach ($categorias as $c): ?>
+            <div class="cat-card" data-cat="<?= $c['slug'] ?>" onclick="filtrar(this,'<?= $c['slug'] ?>')">
+                <img src="<?= $c['img'] ?>" alt="<?= htmlspecialchars($c['nome']) ?>">
+                <span><?= htmlspecialchars($c['nome']) ?></span>
             </div>
             <?php endforeach; ?>
         </div>
     </div>
 </section>
 
-<!-- ================================
-     PRODUTOS EM DESTAQUE
-================================ -->
+<!-- PRODUTOS -->
 <section class="produtos" id="produtos">
     <div class="container">
-        <div class="section-header">
-            <h2>Mais Pedidos</h2>
+        <div class="sec-header">
+            <h2>Mais pedidos</h2>
             <p>Os queridinhos dos nossos clientes</p>
-            <span class="linha-rosa"></span>
+            <span class="sec-linha"></span>
         </div>
-
         <div class="prod-grid" id="prodGrid">
-            <?php foreach ($produtos_destaque as $p): ?>
-            <div class="prod-card" data-categoria="<?= $p['categoria'] ?>">
+            <?php foreach ($produtos as $p): ?>
+            <div class="prod-card" data-cat="<?= $p['categoria'] ?>">
                 <div class="prod-img">
                     <img src="<?= $p['imagem'] ?>" alt="<?= htmlspecialchars($p['nome']) ?>" loading="lazy">
                 </div>
                 <div class="prod-body">
                     <div class="prod-nome"><?= htmlspecialchars($p['nome']) ?></div>
                     <div class="prod-preco">R$ <?= number_format($p['preco'], 2, ',', '.') ?></div>
-                    <button class="btn-add"
-                        onclick="adicionarCarrinho(<?= $p['id'] ?>, '<?= addslashes($p['nome']) ?>', <?= $p['preco'] ?>, '<?= $p['imagem'] ?>')">
-                        + Adicionar ao carrinho
+                    <button class="btn-add" onclick="addCart(<?= $p['id'] ?>,'<?= addslashes(htmlspecialchars($p['nome'])) ?>',<?= $p['preco'] ?>,'<?= $p['imagem'] ?>')">
+                        + Adicionar
                     </button>
                 </div>
             </div>
@@ -957,74 +116,68 @@ $depoimentos = [
     </div>
 </section>
 
-<!-- ================================
-     OFERTA DA SEMANA
-================================ -->
+<!-- OFERTA -->
 <section class="oferta" id="ofertas">
     <div class="container oferta-inner">
         <div class="oferta-texto">
-            <span class="oferta-badge">🔥 Oferta da semana</span>
+            <span class="oferta-badge">Oferta da semana</span>
             <h2>Combo Smash<br><span>+ Açaí 500ml</span></h2>
-            <p>Lanche artesanal com blend da casa, cheddar, bacon crocante + açaí cremoso com granola e banana. Tudo por um preço impossível de recusar.</p>
+            <p>Burger artesanal com blend da casa, cheddar e bacon crocante + açaí cremoso com granola e banana. Um preço impossível de recusar.</p>
             <div class="oferta-preco">
                 <span class="oferta-de">R$ 59,80</span>
                 <span class="oferta-por">R$ 44,90</span>
             </div>
-            <button class="btn btn-primary" onclick="adicionarCarrinho(99, 'Combo Smash + Açaí', 44.90, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200')">
-                🛒 Aproveitar Combo
+            <button class="btn btn-rosa" onclick="addCart(99,'Combo Smash + Açaí',44.90,'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&q=80')">
+                Aproveitar combo
             </button>
         </div>
         <div class="oferta-img">
-            <img src="https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=600&q=80" alt="Combo da semana">
+            <img src="https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=700&q=80" alt="Combo da semana">
         </div>
     </div>
 </section>
 
-<!-- ================================
-     SOBRE
-================================ -->
+<!-- SOBRE -->
 <section class="sobre" id="sobre">
     <div class="container sobre-inner">
-        <div class="sobre-img">
-            <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80" alt="Nossa cozinha">
+        <div class="sobre-foto">
+            <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80" alt="Nossa cozinha">
         </div>
         <div class="sobre-texto">
-            <span class="hero-tag" style="background:var(--creme);color:var(--rosa);margin-bottom:16px;display:inline-block;">Nossa história</span>
+            <span class="sobre-tag">Nossa história</span>
             <h2>Feito com carinho,<br>desde o primeiro dia</h2>
-            <p>Começamos pequenos, com uma tigela de açaí e muita vontade de fazer diferente. Hoje somos a lanchonete favorita do bairro, mas sem perder a essência: comida de verdade, com ingredientes selecionados e muito afeto.</p>
-            <p>Cada item do cardápio é pensado para te surpreender. Do açaí cremoso ao smash burger perfeito — aqui, cada detalhe importa.</p>
-            <div class="sobre-itens">
-                <div class="sobre-item">
-                    <div class="num">500+</div>
-                    <div class="label">Pedidos por semana</div>
+            <p>Começamos pequenos, com uma tigela de açaí e muita vontade de fazer diferente. Hoje somos a lanchonete favorita do bairro — sem perder a essência de sempre: comida de verdade, ingredientes selecionados e muito afeto.</p>
+            <p>Cada item do cardápio é pensado para te surpreender. Do açaí cremoso ao smash burger perfeito, aqui cada detalhe importa.</p>
+            <div class="sobre-nums">
+                <div class="sobre-num">
+                    <div class="n">500+</div>
+                    <div class="l">Pedidos por semana</div>
                 </div>
-                <div class="sobre-item">
-                    <div class="num">4.9⭐</div>
-                    <div class="label">Avaliação média</div>
+                <div class="sobre-num">
+                    <div class="n">4.9</div>
+                    <div class="l">Avaliação média</div>
                 </div>
-                <div class="sobre-item">
-                    <div class="num">3 anos</div>
-                    <div class="label">De muito sabor</div>
+                <div class="sobre-num">
+                    <div class="n">3 anos</div>
+                    <div class="l">De muito sabor</div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ================================
-     DEPOIMENTOS
-================================ -->
+<!-- DEPOIMENTOS -->
 <section class="depoimentos">
     <div class="container">
-        <div class="section-header">
+        <div class="sec-header">
             <h2>O que dizem nossos clientes</h2>
             <p>Quem prova, sempre volta</p>
-            <span class="linha-rosa"></span>
+            <span class="sec-linha"></span>
         </div>
         <div class="dep-grid">
             <?php foreach ($depoimentos as $d): ?>
             <div class="dep-card">
-                <div class="dep-estrelas"><?= str_repeat('⭐', $d['nota']) ?></div>
+                <div class="dep-stars"><?= str_repeat('★', $d['nota']) ?></div>
                 <p class="dep-texto">"<?= htmlspecialchars($d['texto']) ?>"</p>
                 <span class="dep-nome">— <?= htmlspecialchars($d['nome']) ?></span>
             </div>
@@ -1033,212 +186,185 @@ $depoimentos = [
     </div>
 </section>
 
-<!-- ================================
-     CTA FINAL
-================================ -->
-<section class="cta-final">
+<!-- CTA FINAL -->
+<section class="cta">
     <div class="container">
-        <h2>Bateu aquela fome?<br>A gente resolve agora! 🚀</h2>
+        <h2>Bateu a fome?<br>A gente resolve agora.</h2>
         <p>Peça pelo WhatsApp e receba em minutos. Sem complicação.</p>
-        <a href="https://wa.me/5581987028550?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" class="btn btn-wpp">
-            💬 Pedir pelo WhatsApp
+        <a href="https://wa.me/5581987028550?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" rel="noopener" class="btn btn-wpp">
+            Pedir pelo WhatsApp
         </a>
-        <div class="cta-info">
-            <span class="cta-info-item">🕐 Entrega em até 40 min</span>
-            <span class="cta-info-item">📍 Raio de 5km</span>
-            <span class="cta-info-item">⭐ Qualidade garantida</span>
+        <div class="cta-infos">
+            <span class="cta-info">Entrega em até 40 min</span>
+            <span class="cta-info">Raio de 5 km</span>
+            <span class="cta-info">Qualidade garantida</span>
         </div>
     </div>
 </section>
 
-<!-- ================================
-     FOOTER
-================================ -->
+<!-- FOOTER -->
 <footer class="footer">
     <div class="container">
         <div class="footer-grid">
             <div>
                 <div class="footer-logo">Sabor<span>&</span>Cia</div>
-                <p class="footer-desc">Açaí, hambúrgueres artesanais, doces e bebidas geladas. Tudo com muito amor e sabor.</p>
+                <p class="footer-desc">Açaí, hambúrgueres artesanais, doces e bebidas geladas. Tudo com amor e sabor.</p>
                 <div class="footer-social">
-                    <a href="#" class="soc-btn">📸</a>
-                    <a href="#" class="soc-btn">📘</a>
-                    <a href="#" class="soc-btn">🎵</a>
+                    <a href="#" class="soc" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                    </a>
+                    <a href="#" class="soc" aria-label="Facebook">
+                        <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                    </a>
+                    <a href="https://wa.me/5581987028550" class="soc" aria-label="WhatsApp" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </a>
                 </div>
             </div>
             <div>
                 <h4>Cardápio</h4>
                 <ul>
-                    <li><a href="#">Açaí</a></li>
-                    <li><a href="#">Hambúrgueres</a></li>
-                    <li><a href="#">Doces</a></li>
-                    <li><a href="#">Bebidas</a></li>
-                    <li><a href="#">Combos</a></li>
+                    <li><a href="#cardapio">Açaí</a></li>
+                    <li><a href="#cardapio">Hambúrgueres</a></li>
+                    <li><a href="#cardapio">Doces</a></li>
+                    <li><a href="#cardapio">Bebidas</a></li>
+                    <li><a href="#ofertas">Combos</a></li>
                 </ul>
             </div>
             <div>
                 <h4>Contato</h4>
                 <ul>
-                    <li><a href="#">📲 WhatsApp</a></li>
-                    <li><a href="#">📍 Rua das Flores, 123</a></li>
-                    <li><a href="#">🕐 Seg–Dom, 11h–23h</a></li>
-                    <li><a href="#">📧 contato@saborecia.com</a></li>
+                    <li><a href="https://wa.me/5581987028550" target="_blank" rel="noopener">WhatsApp</a></li>
+                    <li><a href="#">Rua das Flores, 123</a></li>
+                    <li><a href="#">Seg–Dom, 11h–23h</a></li>
+                    <li><a href="mailto:contato@saborecia.com">contato@saborecia.com</a></li>
                 </ul>
             </div>
         </div>
-        <p class="footer-copy">© <?= date('Y') ?> Sabor&Cia — Todos os direitos reservados.</p>
+        <p class="footer-copy">© <?= date('Y') ?> Sabor&amp;Cia — Todos os direitos reservados.</p>
     </div>
 </footer>
 
-<!-- ================================
-     CARRINHO SIDEBAR
-================================ -->
-<div class="cart-overlay" id="cartOverlay" onclick="fecharCart()"></div>
+<!-- CARRINHO -->
+<div class="cart-overlay" id="cartOverlay"></div>
 <div class="cart-sidebar" id="cartSidebar">
     <div class="cart-head">
-        <h3>🛒 Meu Carrinho</h3>
-        <button class="cart-close" onclick="fecharCart()">✕</button>
+        <h3>Meu carrinho</h3>
+        <button class="cart-close" id="btnFecharCart" aria-label="Fechar">&#x2715;</button>
     </div>
     <div class="cart-items" id="cartItems">
-        <p class="cart-empty">Seu carrinho está vazio.<br>Adicione algo gostoso! 😋</p>
+        <p class="cart-vazio">Seu carrinho está vazio.<br>Adicione algo gostoso!</p>
     </div>
     <div class="cart-foot">
         <div class="cart-total">
             <span>Total</span>
-            <span id="cartTotal">R$ 0,00</span>
+            <span class="total-valor" id="cartTotal">R$ 0,00</span>
         </div>
-        <button class="btn btn-wpp" style="width:100%;justify-content:center;" id="btnFinalizarWpp">
-            💬 Finalizar pelo WhatsApp
+        <button class="btn btn-wpp" style="width:100%" id="btnFinalizarWpp">
+            Finalizar pelo WhatsApp
         </button>
     </div>
 </div>
 
-<!-- Toast notificação -->
-<div class="toast" id="toast">✅ Adicionado ao carrinho!</div>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <script>
-// ================================
-// ESTADO DO CARRINHO
-// ================================
-let carrinho = [];
-let totalItens = 0;
+    var cart = [];
 
-// ================================
-// NAVBAR SCROLL
-// ================================
-window.addEventListener('scroll', () => {
-    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 30);
-});
-
-// ================================
-// CARRINHO - ABRIR / FECHAR
-// ================================
-document.getElementById('btnAbrirCart').addEventListener('click', abrirCart);
-
-function abrirCart() {
-    document.getElementById('cartSidebar').classList.add('open');
-    document.getElementById('cartOverlay').classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-function fecharCart() {
-    document.getElementById('cartSidebar').classList.remove('open');
-    document.getElementById('cartOverlay').classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-// ================================
-// ADICIONAR AO CARRINHO
-// ================================
-function adicionarCarrinho(id, nome, preco, img) {
-    const existente = carrinho.find(i => i.id === id);
-    if (existente) {
-        existente.qtd++;
-    } else {
-        carrinho.push({ id, nome, preco, img, qtd: 1 });
-    }
-    totalItens++;
-    atualizarUI();
-    mostrarToast('✅ ' + nome + ' adicionado!');
-}
-
-function removerCarrinho(id) {
-    const idx = carrinho.findIndex(i => i.id === id);
-    if (idx !== -1) {
-        totalItens -= carrinho[idx].qtd;
-        carrinho.splice(idx, 1);
-        atualizarUI();
-    }
-}
-
-// ================================
-// ATUALIZAR UI
-// ================================
-function atualizarUI() {
-    // Badge
-    const badge = document.getElementById('cartBadge');
-    badge.textContent = totalItens;
-    badge.style.display = totalItens > 0 ? 'flex' : 'none';
-
-    // Items
-    const container = document.getElementById('cartItems');
-    if (carrinho.length === 0) {
-        container.innerHTML = '<p class="cart-empty">Seu carrinho está vazio.<br>Adicione algo gostoso! 😋</p>';
-    } else {
-        container.innerHTML = carrinho.map(item => `
-            <div class="cart-item">
-                <div class="cart-item-img">
-                    <img src="${item.img}" alt="${item.nome}" style="height:56px;object-fit:cover;">
-                </div>
-                <div class="cart-item-info">
-                    <div class="cart-item-nome">${item.nome} ${item.qtd > 1 ? '×' + item.qtd : ''}</div>
-                    <div class="cart-item-preco">R$ ${(item.preco * item.qtd).toFixed(2).replace('.', ',')}</div>
-                </div>
-                <button class="cart-item-rm" onclick="removerCarrinho(${item.id})">🗑️</button>
-            </div>
-        `).join('');
-    }
-
-    // Total
-    const total = carrinho.reduce((s, i) => s + i.preco * i.qtd, 0);
-    document.getElementById('cartTotal').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
-
-    // Link WPP
-    const pedido = carrinho.map(i => `${i.qtd}x ${i.nome}`).join(', ');
-    const msg = encodeURIComponent(`Olá! Quero fazer um pedido:\n${pedido}\nTotal: R$ ${total.toFixed(2).replace('.', ',')}`);
-    document.getElementById('btnFinalizarWpp').onclick = () => {
-        window.open(`https://wa.me/5581987028550?text=${msg}`, '_blank');
-    };
-}
-
-// ================================
-// TOAST
-// ================================
-function mostrarToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2500);
-}
-
-// ================================
-// FILTRO POR CATEGORIA
-// ================================
-function filtrarProdutos(cat) {
-    const cards = document.querySelectorAll('.prod-card');
-    cards.forEach(c => {
-        const visivel = c.dataset.categoria === cat;
-        c.style.display = visivel ? 'block' : 'none';
+    // Navbar scroll
+    window.addEventListener('scroll', function () {
+        document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 30);
     });
-    // Scroll suave até os produtos
-    document.getElementById('produtos').scrollIntoView({ behavior: 'smooth' });
-    // Resetar depois de 4s
-    setTimeout(() => cards.forEach(c => c.style.display = 'block'), 4000);
-}
 
-// ================================
-// BADGE INICIAL
-// ================================
-document.getElementById('cartBadge').style.display = 'none';
+    // Carrinho: abrir / fechar
+    document.getElementById('btnAbrirCart').addEventListener('click', function () { toggleCart(true); });
+    document.getElementById('btnFecharCart').addEventListener('click', function () { toggleCart(false); });
+    document.getElementById('cartOverlay').addEventListener('click', function () { toggleCart(false); });
+
+    function toggleCart(open) {
+        document.getElementById('cartSidebar').classList.toggle('open', open);
+        document.getElementById('cartOverlay').classList.toggle('open', open);
+        document.body.style.overflow = open ? 'hidden' : '';
+    }
+
+    // Adicionar ao carrinho
+    function addCart(id, nome, preco, img) {
+        var found = false;
+        for (var i = 0; i < cart.length; i++) {
+            if (cart[i].id === id) { cart[i].qtd++; found = true; break; }
+        }
+        if (!found) { cart.push({ id: id, nome: nome, preco: preco, img: img, qtd: 1 }); }
+        renderCart();
+        showToast(nome + ' adicionado!');
+    }
+
+    // Remover do carrinho
+    function removeCart(id) {
+        cart = cart.filter(function (i) { return i.id !== id; });
+        renderCart();
+    }
+
+    // Renderizar carrinho
+    function renderCart() {
+        var total = 0, totalItens = 0;
+        for (var i = 0; i < cart.length; i++) {
+            total += cart[i].preco * cart[i].qtd;
+            totalItens += cart[i].qtd;
+        }
+
+        var badge = document.getElementById('cartBadge');
+        badge.textContent = totalItens;
+        badge.style.display = totalItens > 0 ? 'flex' : 'none';
+
+        var itemsEl = document.getElementById('cartItems');
+        if (cart.length === 0) {
+            itemsEl.innerHTML = '<p class="cart-vazio">Seu carrinho está vazio.<br>Adicione algo gostoso!</p>';
+        } else {
+            var html = '';
+            for (var j = 0; j < cart.length; j++) {
+                var it = cart[j];
+                var subtotal = (it.preco * it.qtd).toFixed(2).replace('.', ',');
+                html += '<div class="cart-item">'
+                    + '<div class="cart-item-img"><img src="' + it.img + '" alt="' + it.nome + '"></div>'
+                    + '<div class="cart-item-info">'
+                    + '<div class="cart-item-nome">' + it.nome + (it.qtd > 1 ? ' x' + it.qtd : '') + '</div>'
+                    + '<div class="cart-item-preco">R$ ' + subtotal + '</div>'
+                    + '</div>'
+                    + '<button class="cart-rm" onclick="removeCart(' + it.id + ')" aria-label="Remover">&#x2715;</button>'
+                    + '</div>';
+            }
+            itemsEl.innerHTML = html;
+        }
+
+        document.getElementById('cartTotal').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+
+        var pedido = cart.map(function (i) { return i.qtd + 'x ' + i.nome; }).join(', ');
+        var msg = encodeURIComponent('Olá! Quero fazer um pedido:\n' + pedido + '\nTotal: R$ ' + total.toFixed(2).replace('.', ','));
+        document.getElementById('btnFinalizarWpp').onclick = function () {
+            window.open('https://wa.me/5581987028550?text=' + msg, '_blank', 'noopener');
+        };
+    }
+
+    // Toast
+    var toastTimer;
+    function showToast(msg) {
+        var el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2500);
+    }
+
+    // Filtro por categoria
+    function filtrar(el, cat) {
+        document.querySelectorAll('.cat-card').forEach(function (c) { c.classList.remove('ativo'); });
+        el.classList.add('ativo');
+        document.querySelectorAll('.prod-card').forEach(function (c) {
+            c.style.display = (cat === 'todos' || c.dataset.cat === cat) ? '' : 'none';
+        });
+        document.getElementById('produtos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 </script>
 </body>
 </html>
