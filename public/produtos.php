@@ -1,4 +1,10 @@
 <?php
+
+require_once __DIR__ . '/../inc/config.php';  
+require_once __DIR__ . '/../inc/db.php';
+require_once __DIR__ . '/../inc/functions.php';
+
+
 // ============================================
 // produtos.php — Cardápio completo
 // ============================================

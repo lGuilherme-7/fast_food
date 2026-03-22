@@ -6,6 +6,10 @@ session_start();
 session_unset();
 session_destroy();
 
+require_once __DIR__ . '/../inc/config.php';  
+require_once __DIR__ . '/../inc/db.php';
+require_once __DIR__ . '/../inc/functions.php';
+
 // Limpa o cookie de sessão
 if (ini_get("session.use_cookies")) {
     $p = session_get_cookie_params();
