@@ -8,93 +8,158 @@ require_once __DIR__ . '/../includes/auth.php';
 $mensagem = '';
 $erro     = '';
 
-// ============================================
-// DADOS SIMULADOS — substituir por banco depois
-// ============================================
-$config = [
-    // Loja
-    'loja_nome'        => 'Sabor & Cia',
-    'loja_descricao'   => 'Açaí, hambúrgueres artesanais, doces e bebidas geladas.',
-    'loja_cnpj'        => '12.345.678/0001-99',
-    'loja_email'       => 'contato@saborecia.com',
-    'loja_telefone'    => '(81) 98702-8550',
-    'loja_whatsapp'    => '5581987028550',
-    'loja_endereco'    => 'Rua das Flores, 123',
-    'loja_bairro'      => 'Centro',
-    'loja_cidade'      => 'Recife',
-    'loja_estado'      => 'PE',
-    'loja_cep'         => '50010-000',
+// ── CARREGA TODAS AS CONFIGURAÇÕES DO BANCO ──────────────────
+// A tabela `configuracoes` tem: chave (PK), valor, grupo
+$stmt = $pdo->query("SELECT chave, valor FROM configuracoes");
+$cfg  = [];
+foreach ($stmt->fetchAll() as $row) {
+    $cfg[$row['chave']] = $row['valor'];
+}
 
-    // Funcionamento
-    'func_seg'  => true,  'func_seg_abre'  => '11:00', 'func_seg_fecha'  => '23:00',
-    'func_ter'  => true,  'func_ter_abre'  => '11:00', 'func_ter_fecha'  => '23:00',
-    'func_qua'  => true,  'func_qua_abre'  => '11:00', 'func_qua_fecha'  => '23:00',
-    'func_qui'  => true,  'func_qui_abre'  => '11:00', 'func_qui_fecha'  => '23:00',
-    'func_sex'  => true,  'func_sex_abre'  => '11:00', 'func_sex_fecha'  => '23:00',
-    'func_sab'  => true,  'func_sab_abre'  => '12:00', 'func_sab_fecha'  => '00:00',
-    'func_dom'  => false, 'func_dom_abre'  => '12:00', 'func_dom_fecha'  => '22:00',
+// Helper: lê config com fallback
+function cfg(array $cfg, string $chave, string $padrao = ''): string {
+    return $cfg[$chave] ?? $padrao;
+}
+function cfgBool(array $cfg, string $chave, bool $padrao = false): bool {
+    if (!isset($cfg[$chave])) return $padrao;
+    return in_array($cfg[$chave], ['1', 'true', 'on', 'yes'], true);
+}
 
-    // Entrega
-    'entrega_ativa'    => true,
-    'entrega_taxa'     => 5.00,
-    'entrega_gratis'   => 50.00,
-    'entrega_tempo'    => 40,
-    'entrega_raio'     => 5,
-    'retirada_ativa'   => true,
-    'retirada_tempo'   => 15,
+// ── SEÇÃO ATIVA ───────────────────────────────────────────────
+$secao  = in_array($_GET['secao'] ?? '', ['loja','funcionamento','entrega','pagamentos','notificacoes','conta'])
+    ? $_GET['secao']
+    : 'loja';
 
-    // Pagamentos
-    'pag_dinheiro' => true,
-    'pag_cartao'   => true,
-    'pag_pix'      => true,
-    'pix_chave'    => '5581987028550',
-    'pix_tipo'     => 'telefone',
-    'pix_nome'     => 'Sabor e Cia LTDA',
-
-    // Notificações
-    'notif_pedido'     => true,
-    'notif_email'      => true,
-    'notif_wpp'        => false,
-    'notif_email_dest' => 'admin@saborecia.com',
-
-    // Admin
-    'admin_nome'   => 'Administrador',
-    'admin_email'  => 'admin@saborecia.com',
-];
-
-// Seção ativa
-$secao = $_GET['secao'] ?? 'loja';
-$secoes = [
-    'loja'          => ['label'=>'Loja',         'icon'=>'store'],
-    'funcionamento' => ['label'=>'Funcionamento', 'icon'=>'clock'],
-    'entrega'       => ['label'=>'Entrega',       'icon'=>'truck'],
-    'pagamentos'    => ['label'=>'Pagamentos',    'icon'=>'credit'],
-    'notificacoes'  => ['label'=>'Notificações',  'icon'=>'bell'],
-    'conta'         => ['label'=>'Minha conta',   'icon'=>'user'],
-];
-
-// Salvar
+// ── SALVAR CONFIGURAÇÕES ─────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar'])) {
-    // TODO: UPDATE configuracoes SET ... para cada campo recebido
-    $mensagem = 'Configurações salvas com sucesso!';
-    // Simular atualização dos dados
-    foreach ($_POST as $k => $v) {
-        if (array_key_exists($k, $config)) {
-            $config[$k] = is_array($v) ? $v : trim($v);
+
+    // Campos booleanos que podem não vir no POST quando desmarcados
+    $bool_keys = [
+        'func_seg','func_ter','func_qua','func_qui','func_sex','func_sab','func_dom',
+        'entrega_ativa','retirada_ativa',
+        'pag_dinheiro','pag_cartao','pag_pix',
+        'notif_pedido','notif_email','notif_wpp',
+    ];
+
+    // Monta array de chaves → valores a salvar
+    $salvar = [];
+
+    // Todos os campos de texto/select do formulário
+    $campos_texto = [
+        // Loja
+        'loja_nome','loja_descricao','loja_cnpj','loja_email',
+        'loja_telefone','loja_whatsapp','loja_endereco','loja_bairro',
+        'loja_cidade','loja_estado','loja_cep',
+        // Horários
+        'func_seg_abre','func_seg_fecha','func_ter_abre','func_ter_fecha',
+        'func_qua_abre','func_qua_fecha','func_qui_abre','func_qui_fecha',
+        'func_sex_abre','func_sex_fecha','func_sab_abre','func_sab_fecha',
+        'func_dom_abre','func_dom_fecha',
+        // Entrega
+        'entrega_taxa','entrega_gratis','entrega_tempo','entrega_raio','retirada_tempo',
+        // Pagamentos
+        'pix_chave','pix_tipo','pix_nome',
+        // Notificações
+        'notif_email_dest',
+    ];
+
+    foreach ($campos_texto as $chave) {
+        if (isset($_POST[$chave])) {
+            $salvar[$chave] = trim($_POST[$chave]);
         }
     }
-    // Checkboxes (não vêm no POST quando desmarcados)
-    $bool_keys = ['func_seg','func_ter','func_qua','func_qui','func_sex','func_sab','func_dom',
-                  'entrega_ativa','retirada_ativa','pag_dinheiro','pag_cartao','pag_pix',
-                  'notif_pedido','notif_email','notif_wpp'];
-    foreach ($bool_keys as $k) {
-        $config[$k] = isset($_POST[$k]);
+
+    // Booleanos: 1 se marcado, 0 se não veio no POST
+    foreach ($bool_keys as $chave) {
+        $salvar[$chave] = isset($_POST[$chave]) ? '1' : '0';
+    }
+
+    // Upsert de cada configuração (INSERT ... ON DUPLICATE KEY UPDATE)
+    $stmt = $pdo->prepare("
+        INSERT INTO configuracoes (chave, valor)
+        VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE valor = VALUES(valor)
+    ");
+
+    $pdo->beginTransaction();
+    try {
+        foreach ($salvar as $chave => $valor) {
+            $stmt->execute([$chave, $valor]);
+        }
+        $pdo->commit();
+        $mensagem = 'Configurações salvas com sucesso!';
+
+        // Recarrega após salvar
+        $stmt2 = $pdo->query("SELECT chave, valor FROM configuracoes");
+        $cfg   = [];
+        foreach ($stmt2->fetchAll() as $row) $cfg[$row['chave']] = $row['valor'];
+
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        $erro = 'Erro ao salvar. Tente novamente.';
     }
 }
 
+// ── ALTERAR SENHA (seção conta) ───────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
+    $senha_atual = $_POST['senha_atual'] ?? '';
+    $senha_nova  = $_POST['senha_nova']  ?? '';
+    $senha_conf  = $_POST['senha_conf']  ?? '';
+
+    $admin_id = $_SESSION['admin_id'] ?? 0;
+
+    if (empty($senha_atual) || empty($senha_nova)) {
+        $erro = 'Preencha a senha atual e a nova senha.';
+    } elseif ($senha_nova !== $senha_conf) {
+        $erro = 'A nova senha e a confirmação não coincidem.';
+    } elseif (strlen($senha_nova) < 8) {
+        $erro = 'A nova senha deve ter pelo menos 8 caracteres.';
+    } else {
+        $stmt = $pdo->prepare("SELECT senha_hash FROM admins WHERE id = ?");
+        $stmt->execute([$admin_id]);
+        $hash_atual = $stmt->fetchColumn();
+
+        if (!$hash_atual || !password_verify($senha_atual, $hash_atual)) {
+            $erro = 'Senha atual incorreta.';
+        } else {
+            $novo_hash = password_hash($senha_nova, PASSWORD_BCRYPT);
+            $pdo->prepare("UPDATE admins SET senha_hash = ? WHERE id = ?")->execute([$novo_hash, $admin_id]);
+            $mensagem = 'Senha alterada com sucesso!';
+        }
+    }
+}
+
+// ── DADOS DO ADMIN LOGADO ────────────────────────────────────
+$admin_nome  = $_SESSION['admin_nome']  ?? 'Administrador';
+$admin_email = $_SESSION['admin_email'] ?? '';
+
+// Atualizar nome/email do admin (seção conta)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_conta'])) {
+    $novo_nome  = trim($_POST['admin_nome']  ?? '');
+    $novo_email = trim($_POST['admin_email'] ?? '');
+    $admin_id   = $_SESSION['admin_id'] ?? 0;
+
+    if (empty($novo_nome) || empty($novo_email)) {
+        $erro = 'Nome e e-mail são obrigatórios.';
+    } else {
+        $pdo->prepare("UPDATE admins SET nome = ?, email = ? WHERE id = ?")->execute([$novo_nome, $novo_email, $admin_id]);
+        $_SESSION['admin_nome']  = $novo_nome;
+        $_SESSION['admin_email'] = $novo_email;
+        $admin_nome  = $novo_nome;
+        $admin_email = $novo_email;
+        $mensagem    = 'Dados da conta atualizados!';
+    }
+}
+
+// ── DIAS DA SEMANA ────────────────────────────────────────────
 $dias = [
-    'seg'=>'Segunda','ter'=>'Terça','qua'=>'Quarta',
-    'qui'=>'Quinta','sex'=>'Sexta','sab'=>'Sábado','dom'=>'Domingo'
+    'seg' => 'Segunda',
+    'ter' => 'Terça',
+    'qua' => 'Quarta',
+    'qui' => 'Quinta',
+    'sex' => 'Sexta',
+    'sab' => 'Sábado',
+    'dom' => 'Domingo',
 ];
 ?>
 <!DOCTYPE html>
@@ -106,7 +171,85 @@ $dias = [
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/pages.css">
-    
+    <style>
+        /* Estilos específicos de configurações */
+        .config-layout { display:grid; grid-template-columns:200px 1fr; gap:24px; align-items:start; }
+
+        /* Nav lateral de seções */
+        .config-nav { background:var(--branco); border:1px solid var(--borda); border-radius:var(--r); padding:12px; position:sticky; top:76px; }
+        .config-nav-titulo { font-size:.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--cinza); padding:4px 8px 10px; }
+        .config-nav-item { display:flex; align-items:center; gap:9px; padding:9px 12px; border-radius:8px; font-size:.83rem; font-weight:500; color:var(--cinza); transition:background .15s, color .15s; text-decoration:none; margin-bottom:2px; }
+        .config-nav-item:hover { background:var(--rosa-claro); color:var(--rosa); }
+        .config-nav-item.ativo { background:var(--rosa); color:#fff; }
+        .config-nav-item svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; }
+
+        /* Seção card */
+        .sec-card { background:var(--branco); border:1px solid var(--borda); border-radius:var(--r); overflow:hidden; margin-bottom:16px; }
+        .sec-head  { display:flex; align-items:center; gap:14px; padding:16px 20px; background:var(--bg); border-bottom:1px solid var(--borda); }
+        .sec-head-icone { width:36px; height:36px; border-radius:9px; background:var(--rosa-claro); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .sec-head-icone svg { width:16px; height:16px; stroke:var(--rosa); fill:none; stroke-width:2; }
+        .sec-head-texto h2 { font-family:var(--f-titulo); font-size:.95rem; font-weight:700; }
+        .sec-head-texto p  { font-size:.76rem; color:var(--cinza); margin-top:2px; }
+        .sec-body  { padding:20px; }
+
+        /* Campos */
+        .campos-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+        .campos-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px; }
+        .campo-full { margin-bottom:14px; }
+        .campo-sep  { border:none; border-top:1px solid var(--borda); margin:16px 0; }
+        .campo-hint { font-size:.74rem; color:var(--cinza); margin-top:3px; display:block; }
+
+        /* Info box */
+        .info-box { display:flex; align-items:flex-start; gap:8px; background:var(--rosa-claro); border:1px solid var(--rosa-borda); border-radius:8px; padding:10px 12px; margin-top:10px; font-size:.8rem; color:var(--rosa); font-weight:500; }
+        .info-box svg { width:14px; height:14px; stroke:var(--rosa); fill:none; stroke-width:2; flex-shrink:0; margin-top:1px; }
+
+        /* Horários */
+        .dia-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--borda); flex-wrap:wrap; }
+        .dia-row:last-child { border-bottom:none; }
+        .dia-nome  { width:80px; font-size:.85rem; font-weight:600; flex-shrink:0; }
+        .horas-wrap { display:flex; align-items:center; gap:8px; flex:1; }
+        .horas-wrap input[type="time"] { padding:7px 10px; border-radius:8px; border:1px solid var(--borda); font-family:var(--f-corpo); font-size:.85rem; background:var(--branco); color:var(--escuro); }
+        .horas-wrap.fechado input[type="time"] { opacity:.3; pointer-events:none; }
+        .horas-sep { font-size:.8rem; color:var(--cinza); }
+
+        /* Toggle row */
+        .toggle-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--borda); }
+        .toggle-row:last-child { border-bottom:none; }
+        .toggle-info { flex:1; min-width:0; }
+        .t-titulo { font-size:.88rem; font-weight:600; }
+        .t-sub    { font-size:.76rem; color:var(--cinza); margin-top:2px; }
+
+        /* Pagamentos */
+        .pagto-grid { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+        .pagto-card { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid var(--borda); border-radius:var(--r); cursor:pointer; min-width:140px; transition:all .2s; flex:1; }
+        .pagto-card:has(input:checked) { border-color:var(--rosa); background:var(--rosa-claro); }
+        .pagto-card input[type="checkbox"] { accent-color:var(--rosa); width:16px; height:16px; flex-shrink:0; }
+        .pagto-card svg { width:18px; height:18px; stroke:var(--cinza); fill:none; stroke-width:1.8; flex-shrink:0; }
+        .pagto-card:has(input:checked) svg { stroke:var(--rosa); }
+        .p-titulo { font-size:.88rem; font-weight:600; }
+        .p-sub    { font-size:.74rem; color:var(--cinza); }
+
+        /* Senha */
+        .senha-field { position:relative; }
+        .senha-field input { padding-right:40px; width:100%; }
+        .senha-toggle { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; }
+        .senha-toggle svg { width:15px; height:15px; stroke:var(--cinza); fill:none; stroke-width:2; }
+
+        /* Barra salvar */
+        .save-bar { background:var(--branco); border:1px solid var(--borda); border-radius:var(--r); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; position:sticky; bottom:20px; box-shadow:0 4px 20px rgba(0,0,0,.08); margin-top:4px; }
+        .save-bar p { font-size:.82rem; color:var(--cinza); }
+
+        /* Responsivo */
+        @media (max-width:860px) {
+            .config-layout { grid-template-columns:1fr; }
+            .config-nav    { position:static; display:flex; gap:4px; flex-wrap:wrap; }
+            .config-nav-titulo { display:none; }
+        }
+        @media (max-width:600px) {
+            .campos-grid-2, .campos-grid-3 { grid-template-columns:1fr; }
+            .pagto-grid { flex-direction:column; }
+        }
+    </style>
 </head>
 <body>
 <div class="admin-wrap">
@@ -134,8 +277,11 @@ $dias = [
         </nav>
         <div class="sidebar-footer">
             <div class="sidebar-user">
-                <div class="user-avatar">AD</div>
-                <div class="user-info"><div class="user-nome">Administrador</div><div class="user-role">admin</div></div>
+                <div class="user-avatar"><?= mb_strtoupper(mb_substr($admin_nome, 0, 2)) ?></div>
+                <div class="user-info">
+                    <div class="user-nome"><?= htmlspecialchars($admin_nome) ?></div>
+                    <div class="user-role">admin</div>
+                </div>
             </div>
             <a href="../logout.php"><button class="btn-logout"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair do painel</button></a>
         </div>
@@ -148,11 +294,11 @@ $dias = [
                 <button class="btn-menu" id="btnMenu"><svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
                 <div>
                     <div class="topbar-titulo">Configurações</div>
-                    <div class="topbar-breadcrumb"><?= $secoes[$secao]['label'] ?></div>
+                    <div class="topbar-breadcrumb">Personalize a loja e o sistema</div>
                 </div>
             </div>
             <div class="topbar-dir">
-                <a href="../../index.php" target="_blank" style="font-size:.82rem;color:var(--cinza);display:flex;align-items:center;gap:5px;">
+                <a href="../../public/index.php" target="_blank" style="font-size:.82rem;color:var(--cinza);display:flex;align-items:center;gap:5px;">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                     Ver site
                 </a>
@@ -164,47 +310,31 @@ $dias = [
             <?php if ($mensagem): ?>
             <div class="alerta alerta-ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><?= htmlspecialchars($mensagem) ?></div>
             <?php endif; ?>
+            <?php if ($erro): ?>
+            <div class="alerta alerta-err"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><?= htmlspecialchars($erro) ?></div>
+            <?php endif; ?>
 
             <div class="config-layout">
 
-                <!-- NAV LATERAL DE SEÇÕES -->
+                <!-- NAV LATERAL -->
                 <nav class="config-nav">
                     <div class="config-nav-titulo">Seções</div>
-
-                    <a href="?secao=loja" class="config-nav-item <?= $secao==='loja' ?'ativo':'' ?>">
-                        <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        Dados da loja
-                    </a>
-                    <a href="?secao=funcionamento" class="config-nav-item <?= $secao==='funcionamento' ?'ativo':'' ?>">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        Funcionamento
-                    </a>
-                    <a href="?secao=entrega" class="config-nav-item <?= $secao==='entrega' ?'ativo':'' ?>">
-                        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                        Entrega e retirada
-                    </a>
-                    <a href="?secao=pagamentos" class="config-nav-item <?= $secao==='pagamentos' ?'ativo':'' ?>">
-                        <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                        Pagamentos
-                    </a>
-                    <a href="?secao=notificacoes" class="config-nav-item <?= $secao==='notificacoes' ?'ativo':'' ?>">
-                        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                        Notificações
-                    </a>
-                    <a href="?secao=conta" class="config-nav-item <?= $secao==='conta' ?'ativo':'' ?>">
-                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        Minha conta
-                    </a>
+                    <a href="?secao=loja"          class="config-nav-item <?= $secao==='loja'          ?'ativo':'' ?>"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Dados da loja</a>
+                    <a href="?secao=funcionamento"  class="config-nav-item <?= $secao==='funcionamento' ?'ativo':'' ?>"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Funcionamento</a>
+                    <a href="?secao=entrega"        class="config-nav-item <?= $secao==='entrega'        ?'ativo':'' ?>"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Entrega</a>
+                    <a href="?secao=pagamentos"     class="config-nav-item <?= $secao==='pagamentos'     ?'ativo':'' ?>"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>Pagamentos</a>
+                    <a href="?secao=notificacoes"   class="config-nav-item <?= $secao==='notificacoes'   ?'ativo':'' ?>"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notificações</a>
+                    <a href="?secao=conta"          class="config-nav-item <?= $secao==='conta'          ?'ativo':'' ?>"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Minha conta</a>
                 </nav>
 
                 <!-- CONTEÚDO DA SEÇÃO -->
-                <form method="POST" action="configuracoes.php?secao=<?= $secao ?>" class="config-conteudo">
+                <div class="config-conteudo">
+
+                <?php if ($secao === 'loja'): ?>
+                <!-- ── DADOS DA LOJA ──────────────────────── -->
+                <form method="POST" action="configuracoes.php?secao=loja">
                     <input type="hidden" name="salvar" value="1">
 
-                    <?php if ($secao === 'loja'): ?>
-                    <!-- ================================
-                         DADOS DA LOJA
-                    ================================ -->
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
@@ -212,11 +342,11 @@ $dias = [
                         </div>
                         <div class="sec-body">
                             <div class="campos-grid-2">
-                                <div class="campo"><label>Nome da loja</label><input type="text" name="loja_nome" value="<?= htmlspecialchars($config['loja_nome']) ?>"></div>
-                                <div class="campo"><label>CNPJ</label><input type="text" name="loja_cnpj" value="<?= htmlspecialchars($config['loja_cnpj']) ?>"></div>
+                                <div class="campo"><label>Nome da loja</label><input type="text" name="loja_nome" value="<?= htmlspecialchars(cfg($cfg,'loja_nome','Sabor & Cia')) ?>"></div>
+                                <div class="campo"><label>CNPJ</label><input type="text" name="loja_cnpj" value="<?= htmlspecialchars(cfg($cfg,'loja_cnpj')) ?>"></div>
                             </div>
                             <div class="campo-full">
-                                <div class="campo"><label>Descrição curta</label><textarea name="loja_descricao"><?= htmlspecialchars($config['loja_descricao']) ?></textarea></div>
+                                <div class="campo"><label>Descrição curta</label><textarea name="loja_descricao" rows="2"><?= htmlspecialchars(cfg($cfg,'loja_descricao')) ?></textarea></div>
                             </div>
                         </div>
                     </div>
@@ -224,18 +354,18 @@ $dias = [
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.44 2 2 0 0 1 3.57 1.25h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.05 6.05l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
-                            <div class="sec-head-texto"><h2>Contato</h2><p>Email, telefone e WhatsApp</p></div>
+                            <div class="sec-head-texto"><h2>Contato</h2><p>E-mail, telefone e WhatsApp</p></div>
                         </div>
                         <div class="sec-body">
                             <div class="campos-grid-2">
-                                <div class="campo"><label>E-mail de contato</label><input type="email" name="loja_email" value="<?= htmlspecialchars($config['loja_email']) ?>"></div>
-                                <div class="campo"><label>Telefone</label><input type="text" name="loja_telefone" value="<?= htmlspecialchars($config['loja_telefone']) ?>"></div>
+                                <div class="campo"><label>E-mail de contato</label><input type="email" name="loja_email" value="<?= htmlspecialchars(cfg($cfg,'loja_email')) ?>"></div>
+                                <div class="campo"><label>Telefone</label><input type="text" name="loja_telefone" value="<?= htmlspecialchars(cfg($cfg,'loja_telefone')) ?>"></div>
                             </div>
                             <div class="campos-grid-2">
                                 <div class="campo">
-                                    <label>Número WhatsApp</label>
-                                    <input type="text" name="loja_whatsapp" value="<?= htmlspecialchars($config['loja_whatsapp']) ?>">
-                                    <span class="campo-hint">Somente números, com código do país. Ex: 5581987028550</span>
+                                    <label>WhatsApp (recebimento de pedidos)</label>
+                                    <input type="text" name="loja_whatsapp" value="<?= htmlspecialchars(cfg($cfg,'loja_whatsapp','5581987028550')) ?>">
+                                    <span class="campo-hint">Só números com código do país. Ex: 5581987028550</span>
                                 </div>
                                 <div class="campo"></div>
                             </div>
@@ -249,92 +379,112 @@ $dias = [
                         </div>
                         <div class="sec-body">
                             <div class="campos-grid-2">
-                                <div class="campo"><label>Rua / Avenida</label><input type="text" name="loja_endereco" value="<?= htmlspecialchars($config['loja_endereco']) ?>"></div>
-                                <div class="campo"><label>Bairro</label><input type="text" name="loja_bairro" value="<?= htmlspecialchars($config['loja_bairro']) ?>"></div>
+                                <div class="campo"><label>Rua / Avenida</label><input type="text" name="loja_endereco" value="<?= htmlspecialchars(cfg($cfg,'loja_endereco')) ?>"></div>
+                                <div class="campo"><label>Bairro</label><input type="text" name="loja_bairro" value="<?= htmlspecialchars(cfg($cfg,'loja_bairro')) ?>"></div>
                             </div>
                             <div class="campos-grid-3">
-                                <div class="campo"><label>Cidade</label><input type="text" name="loja_cidade" value="<?= htmlspecialchars($config['loja_cidade']) ?>"></div>
-                                <div class="campo"><label>Estado</label><input type="text" name="loja_estado" value="<?= htmlspecialchars($config['loja_estado']) ?>" maxlength="2"></div>
-                                <div class="campo"><label>CEP</label><input type="text" name="loja_cep" value="<?= htmlspecialchars($config['loja_cep']) ?>"></div>
+                                <div class="campo"><label>Cidade</label><input type="text" name="loja_cidade" value="<?= htmlspecialchars(cfg($cfg,'loja_cidade','Recife')) ?>"></div>
+                                <div class="campo"><label>Estado</label><input type="text" name="loja_estado" value="<?= htmlspecialchars(cfg($cfg,'loja_estado','PE')) ?>" maxlength="2"></div>
+                                <div class="campo"><label>CEP</label><input type="text" name="loja_cep" value="<?= htmlspecialchars(cfg($cfg,'loja_cep')) ?>"></div>
                             </div>
                         </div>
                     </div>
 
-                    <?php elseif ($secao === 'funcionamento'): ?>
-                    <!-- ================================
-                         FUNCIONAMENTO
-                    ================================ -->
+                    <div class="save-bar">
+                        <p>Mudanças aplicadas imediatamente ao site.</p>
+                        <div style="display:flex;gap:10px">
+                            <a href="?secao=loja"><button type="button" class="btn btn-cinza">Descartar</button></a>
+                            <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <?php elseif ($secao === 'funcionamento'): ?>
+                <!-- ── FUNCIONAMENTO ──────────────────────── -->
+                <form method="POST" action="configuracoes.php?secao=funcionamento">
+                    <input type="hidden" name="salvar" value="1">
+
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-                            <div class="sec-head-texto"><h2>Horários de funcionamento</h2><p>Configure os dias e horários de atendimento</p></div>
+                            <div class="sec-head-texto"><h2>Horários de atendimento</h2><p>Defina os dias e horários de funcionamento</p></div>
                         </div>
                         <div class="sec-body">
-                            <?php foreach ($dias as $sigla => $nome): ?>
-                            <div class="dia-row" id="row_<?= $sigla ?>">
-                                <div style="display:flex;align-items:center;gap:10px;">
-                                    <div class="toggle-wrap">
-                                        <input type="checkbox" class="toggle-inp" id="func_<?= $sigla ?>" name="func_<?= $sigla ?>"
-                                            <?= $config['func_'.$sigla] ? 'checked' : '' ?>
-                                            onchange="toggleDia('<?= $sigla ?>')">
-                                        <label class="toggle-label" for="func_<?= $sigla ?>"></label>
-                                    </div>
-                                    <span class="dia-nome"><?= $nome ?></span>
+                            <?php foreach ($dias as $sigla => $nome):
+                                $aberto = cfgBool($cfg, 'func_' . $sigla, $sigla !== 'dom');
+                                $abre   = cfg($cfg, 'func_' . $sigla . '_abre',  $sigla === 'sab' || $sigla === 'dom' ? '12:00' : '11:00');
+                                $fecha  = cfg($cfg, 'func_' . $sigla . '_fecha', $sigla === 'dom' ? '22:00' : '23:00');
+                            ?>
+                            <div class="dia-row">
+                                <div class="toggle-wrap" style="flex-shrink:0">
+                                    <input type="checkbox" class="toggle-inp" id="func_<?= $sigla ?>"
+                                        name="func_<?= $sigla ?>"
+                                        <?= $aberto ? 'checked' : '' ?>
+                                        onchange="toggleDia('<?= $sigla ?>')">
+                                    <label class="toggle-label" for="func_<?= $sigla ?>"></label>
                                 </div>
-                                <div class="dia-horas <?= !$config['func_'.$sigla] ? 'fechado' : '' ?>" id="horas_<?= $sigla ?>">
-                                    <input type="time" name="func_<?= $sigla ?>_abre"  value="<?= $config['func_'.$sigla.'_abre']  ?>">
-                                    <span class="dia-sep">até</span>
-                                    <input type="time" name="func_<?= $sigla ?>_fecha" value="<?= $config['func_'.$sigla.'_fecha'] ?>">
+                                <div class="dia-nome"><?= $nome ?></div>
+                                <div class="horas-wrap <?= !$aberto ? 'fechado' : '' ?>" id="horas_<?= $sigla ?>">
+                                    <input type="time" name="func_<?= $sigla ?>_abre"  value="<?= htmlspecialchars($abre) ?>">
+                                    <span class="horas-sep">até</span>
+                                    <input type="time" name="func_<?= $sigla ?>_fecha" value="<?= htmlspecialchars($fecha) ?>">
                                 </div>
-                                <div style="font-size:.78rem;color:<?= $config['func_'.$sigla] ? '#16a34a' : 'var(--cinza)' ?>">
-                                    <?= $config['func_'.$sigla] ? 'Aberto' : 'Fechado' ?>
+                                <div style="font-size:.78rem;font-weight:600;<?= $aberto ? 'color:#16a34a' : 'color:var(--cinza)' ?>">
+                                    <?= $aberto ? 'Aberto' : 'Fechado' ?>
                                 </div>
                             </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
 
-                    <?php elseif ($secao === 'entrega'): ?>
-                    <!-- ================================
-                         ENTREGA
-                    ================================ -->
+                    <div class="save-bar">
+                        <p>Mudanças aplicadas imediatamente ao site.</p>
+                        <div style="display:flex;gap:10px">
+                            <a href="?secao=funcionamento"><button type="button" class="btn btn-cinza">Descartar</button></a>
+                            <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <?php elseif ($secao === 'entrega'): ?>
+                <!-- ── ENTREGA ─────────────────────────────── -->
+                <form method="POST" action="configuracoes.php?secao=entrega">
+                    <input type="hidden" name="salvar" value="1">
+
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
-                            <div class="sec-head-texto"><h2>Entrega em domicílio</h2><p>Taxa, tempo estimado e raio de cobertura</p></div>
+                            <div class="sec-head-texto"><h2>Delivery</h2><p>Taxa, prazo e raio de entrega</p></div>
                         </div>
                         <div class="sec-body">
                             <div class="toggle-row">
-                                <div class="toggle-info">
-                                    <div class="t-titulo">Entrega ativa</div>
-                                    <div class="t-sub">Permitir pedidos com entrega em domicílio</div>
-                                </div>
+                                <div class="toggle-info"><div class="t-titulo">Entrega ativa</div><div class="t-sub">Permite pedidos com entrega no site</div></div>
                                 <div class="toggle-wrap">
-                                    <input type="checkbox" class="toggle-inp" id="entrega_ativa" name="entrega_ativa" <?= $config['entrega_ativa'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" class="toggle-inp" id="entrega_ativa" name="entrega_ativa" <?= cfgBool($cfg,'entrega_ativa',true) ? 'checked' : '' ?>>
                                     <label class="toggle-label" for="entrega_ativa"></label>
                                 </div>
                             </div>
                             <hr class="campo-sep">
-                            <div class="campos-grid-2">
+                            <div class="campos-grid-2" style="margin-top:14px">
                                 <div class="campo">
                                     <label>Taxa de entrega (R$)</label>
-                                    <input type="text" name="entrega_taxa" value="<?= number_format($config['entrega_taxa'],2,',','.') ?>">
-                                    <span class="campo-hint">Use 0 para entrega sempre grátis</span>
+                                    <input type="text" name="entrega_taxa" value="<?= number_format((float)cfg($cfg,'entrega_taxa','5.00'), 2, ',', '.') ?>">
+                                    <span class="campo-hint">Use vírgula. Ex: 5,00</span>
                                 </div>
                                 <div class="campo">
-                                    <label>Grátis acima de (R$)</label>
-                                    <input type="text" name="entrega_gratis" value="<?= number_format($config['entrega_gratis'],2,',','.') ?>">
-                                    <span class="campo-hint">0 = nunca gratuita automaticamente</span>
+                                    <label>Entrega grátis acima de (R$)</label>
+                                    <input type="text" name="entrega_gratis" value="<?= number_format((float)cfg($cfg,'entrega_gratis','50.00'), 2, ',', '.') ?>">
+                                    <span class="campo-hint">0 = entrega grátis sempre</span>
                                 </div>
                             </div>
                             <div class="campos-grid-2">
                                 <div class="campo">
                                     <label>Tempo estimado (min)</label>
-                                    <input type="number" name="entrega_tempo" min="1" value="<?= $config['entrega_tempo'] ?>">
+                                    <input type="number" name="entrega_tempo" min="1" value="<?= (int)cfg($cfg,'entrega_tempo','40') ?>">
                                 </div>
                                 <div class="campo">
                                     <label>Raio de entrega (km)</label>
-                                    <input type="number" name="entrega_raio" min="1" value="<?= $config['entrega_raio'] ?>">
+                                    <input type="number" name="entrega_raio" min="1" value="<?= (int)cfg($cfg,'entrega_raio','5') ?>">
                                 </div>
                             </div>
                         </div>
@@ -342,54 +492,61 @@ $dias = [
 
                     <div class="sec-card">
                         <div class="sec-head">
-                            <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
-                            <div class="sec-head-texto"><h2>Retirada no local</h2><p>Permite que o cliente retire o pedido na loja</p></div>
+                            <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                            <div class="sec-head-texto"><h2>Retirada no local</h2><p>Opção para o cliente retirar pessoalmente</p></div>
                         </div>
                         <div class="sec-body">
                             <div class="toggle-row">
-                                <div class="toggle-info">
-                                    <div class="t-titulo">Retirada ativa</div>
-                                    <div class="t-sub">Permitir que clientes retirem pedidos na loja</div>
-                                </div>
+                                <div class="toggle-info"><div class="t-titulo">Retirada ativa</div><div class="t-sub">Permite pedidos com retirada no local</div></div>
                                 <div class="toggle-wrap">
-                                    <input type="checkbox" class="toggle-inp" id="retirada_ativa" name="retirada_ativa" <?= $config['retirada_ativa'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" class="toggle-inp" id="retirada_ativa" name="retirada_ativa" <?= cfgBool($cfg,'retirada_ativa',true) ? 'checked' : '' ?>>
                                     <label class="toggle-label" for="retirada_ativa"></label>
                                 </div>
                             </div>
                             <hr class="campo-sep">
-                            <div class="campos-grid-2">
+                            <div class="campos-grid-2" style="margin-top:14px">
                                 <div class="campo">
-                                    <label>Tempo estimado para retirada (min)</label>
-                                    <input type="number" name="retirada_tempo" min="1" value="<?= $config['retirada_tempo'] ?>">
+                                    <label>Tempo de preparo para retirada (min)</label>
+                                    <input type="number" name="retirada_tempo" min="1" value="<?= (int)cfg($cfg,'retirada_tempo','15') ?>">
                                 </div>
                                 <div class="campo"></div>
                             </div>
                         </div>
                     </div>
 
-                    <?php elseif ($secao === 'pagamentos'): ?>
-                    <!-- ================================
-                         PAGAMENTOS
-                    ================================ -->
+                    <div class="save-bar">
+                        <p>Mudanças aplicadas imediatamente ao checkout.</p>
+                        <div style="display:flex;gap:10px">
+                            <a href="?secao=entrega"><button type="button" class="btn btn-cinza">Descartar</button></a>
+                            <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <?php elseif ($secao === 'pagamentos'): ?>
+                <!-- ── PAGAMENTOS ──────────────────────────── -->
+                <form method="POST" action="configuracoes.php?secao=pagamentos">
+                    <input type="hidden" name="salvar" value="1">
+
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-                            <div class="sec-head-texto"><h2>Formas de pagamento</h2><p>Selecione os métodos aceitos na entrega</p></div>
+                            <div class="sec-head-texto"><h2>Formas de pagamento</h2><p>Métodos aceitos na entrega e retirada</p></div>
                         </div>
                         <div class="sec-body">
                             <div class="pagto-grid">
                                 <label class="pagto-card">
-                                    <input type="checkbox" name="pag_dinheiro" <?= $config['pag_dinheiro'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" name="pag_dinheiro" <?= cfgBool($cfg,'pag_dinheiro',true) ? 'checked' : '' ?>>
                                     <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
                                     <div class="pagto-card-info"><div class="p-titulo">Dinheiro</div><div class="p-sub">Pagamento na entrega</div></div>
                                 </label>
                                 <label class="pagto-card">
-                                    <input type="checkbox" name="pag_cartao" <?= $config['pag_cartao'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" name="pag_cartao" <?= cfgBool($cfg,'pag_cartao',true) ? 'checked' : '' ?>>
                                     <svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                                     <div class="pagto-card-info"><div class="p-titulo">Cartão</div><div class="p-sub">Débito ou crédito</div></div>
                                 </label>
                                 <label class="pagto-card">
-                                    <input type="checkbox" name="pag_pix" <?= $config['pag_pix'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" name="pag_pix" <?= cfgBool($cfg,'pag_pix',true) ? 'checked' : '' ?>>
                                     <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
                                     <div class="pagto-card-info"><div class="p-titulo">Pix</div><div class="p-sub">Pagamento imediato</div></div>
                                 </label>
@@ -407,70 +564,65 @@ $dias = [
                                 <div class="campo">
                                     <label>Tipo de chave</label>
                                     <select name="pix_tipo">
-                                        <option value="telefone" <?= $config['pix_tipo']==='telefone'?'selected':'' ?>>Telefone</option>
-                                        <option value="cpf"      <?= $config['pix_tipo']==='cpf'     ?'selected':'' ?>>CPF</option>
-                                        <option value="cnpj"     <?= $config['pix_tipo']==='cnpj'    ?'selected':'' ?>>CNPJ</option>
-                                        <option value="email"    <?= $config['pix_tipo']==='email'   ?'selected':'' ?>>E-mail</option>
-                                        <option value="aleatoria"<?= $config['pix_tipo']==='aleatoria'?'selected':'' ?>>Chave aleatória</option>
+                                        <?php foreach (['telefone'=>'Telefone','cpf'=>'CPF','cnpj'=>'CNPJ','email'=>'E-mail','aleatoria'=>'Chave aleatória'] as $v => $l): ?>
+                                        <option value="<?= $v ?>" <?= cfg($cfg,'pix_tipo','telefone') === $v ? 'selected' : '' ?>><?= $l ?></option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </div>
                                 <div class="campo">
                                     <label>Chave Pix</label>
-                                    <input type="text" name="pix_chave" value="<?= htmlspecialchars($config['pix_chave']) ?>">
+                                    <input type="text" name="pix_chave" value="<?= htmlspecialchars(cfg($cfg,'pix_chave')) ?>">
                                 </div>
                             </div>
                             <div class="campos-grid-2">
                                 <div class="campo">
                                     <label>Nome do beneficiário</label>
-                                    <input type="text" name="pix_nome" value="<?= htmlspecialchars($config['pix_nome']) ?>">
-                                    <span class="campo-hint">Nome que aparecerá para o cliente no app de pagamento</span>
+                                    <input type="text" name="pix_nome" value="<?= htmlspecialchars(cfg($cfg,'pix_nome')) ?>">
+                                    <span class="campo-hint">Nome que aparece no app do cliente</span>
                                 </div>
                                 <div class="campo"></div>
-                            </div>
-                            <div class="info-box">
-                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                O QR Code do Pix é gerado automaticamente no checkout com base nessas informações.
                             </div>
                         </div>
                     </div>
 
-                    <?php elseif ($secao === 'notificacoes'): ?>
-                    <!-- ================================
-                         NOTIFICAÇÕES
-                    ================================ -->
+                    <div class="save-bar">
+                        <p>Mudanças aplicadas imediatamente ao checkout.</p>
+                        <div style="display:flex;gap:10px">
+                            <a href="?secao=pagamentos"><button type="button" class="btn btn-cinza">Descartar</button></a>
+                            <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <?php elseif ($secao === 'notificacoes'): ?>
+                <!-- ── NOTIFICAÇÕES ────────────────────────── -->
+                <form method="POST" action="configuracoes.php?secao=notificacoes">
+                    <input type="hidden" name="salvar" value="1">
+
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-                            <div class="sec-head-texto"><h2>Alertas de pedidos</h2><p>Quando e como você quer ser notificado</p></div>
+                            <div class="sec-head-texto"><h2>Alertas de pedidos</h2><p>Quando e como ser notificado</p></div>
                         </div>
                         <div class="sec-body">
                             <div class="toggle-row">
-                                <div class="toggle-info">
-                                    <div class="t-titulo">Notificar novos pedidos</div>
-                                    <div class="t-sub">Receber alerta sempre que um novo pedido chegar</div>
-                                </div>
+                                <div class="toggle-info"><div class="t-titulo">Notificar novos pedidos</div><div class="t-sub">Receber alerta sempre que um pedido chegar</div></div>
                                 <div class="toggle-wrap">
-                                    <input type="checkbox" class="toggle-inp" id="notif_pedido" name="notif_pedido" <?= $config['notif_pedido'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" class="toggle-inp" id="notif_pedido" name="notif_pedido" <?= cfgBool($cfg,'notif_pedido',true) ? 'checked' : '' ?>>
                                     <label class="toggle-label" for="notif_pedido"></label>
                                 </div>
                             </div>
                             <div class="toggle-row">
-                                <div class="toggle-info">
-                                    <div class="t-titulo">Notificação por e-mail</div>
-                                    <div class="t-sub">Enviar e-mail para cada novo pedido</div>
-                                </div>
+                                <div class="toggle-info"><div class="t-titulo">Notificação por e-mail</div><div class="t-sub">Enviar e-mail para cada novo pedido</div></div>
                                 <div class="toggle-wrap">
-                                    <input type="checkbox" class="toggle-inp" id="notif_email" name="notif_email" <?= $config['notif_email'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" class="toggle-inp" id="notif_email" name="notif_email" <?= cfgBool($cfg,'notif_email',true) ? 'checked' : '' ?>>
                                     <label class="toggle-label" for="notif_email"></label>
                                 </div>
                             </div>
                             <div class="toggle-row">
-                                <div class="toggle-info">
-                                    <div class="t-titulo">Resumo diário por WhatsApp</div>
-                                    <div class="t-sub">Receber um resumo dos pedidos do dia às 23h</div>
-                                </div>
+                                <div class="toggle-info"><div class="t-titulo">Resumo diário por WhatsApp</div><div class="t-sub">Receber resumo dos pedidos do dia às 23h</div></div>
                                 <div class="toggle-wrap">
-                                    <input type="checkbox" class="toggle-inp" id="notif_wpp" name="notif_wpp" <?= $config['notif_wpp'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" class="toggle-inp" id="notif_wpp" name="notif_wpp" <?= cfgBool($cfg,'notif_wpp',false) ? 'checked' : '' ?>>
                                     <label class="toggle-label" for="notif_wpp"></label>
                                 </div>
                             </div>
@@ -478,17 +630,28 @@ $dias = [
                             <div class="campos-grid-2">
                                 <div class="campo">
                                     <label>E-mail para notificações</label>
-                                    <input type="email" name="notif_email_dest" value="<?= htmlspecialchars($config['notif_email_dest']) ?>">
+                                    <input type="email" name="notif_email_dest" value="<?= htmlspecialchars(cfg($cfg,'notif_email_dest')) ?>">
                                 </div>
                                 <div class="campo"></div>
                             </div>
                         </div>
                     </div>
 
-                    <?php elseif ($secao === 'conta'): ?>
-                    <!-- ================================
-                         MINHA CONTA
-                    ================================ -->
+                    <div class="save-bar">
+                        <p>Mudanças aplicadas imediatamente.</p>
+                        <div style="display:flex;gap:10px">
+                            <a href="?secao=notificacoes"><button type="button" class="btn btn-cinza">Descartar</button></a>
+                            <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <?php elseif ($secao === 'conta'): ?>
+                <!-- ── MINHA CONTA ─────────────────────────── -->
+
+                <!-- Dados pessoais -->
+                <form method="POST" action="configuracoes.php?secao=conta">
+                    <input type="hidden" name="atualizar_conta" value="1">
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
@@ -496,12 +659,19 @@ $dias = [
                         </div>
                         <div class="sec-body">
                             <div class="campos-grid-2">
-                                <div class="campo"><label>Nome</label><input type="text" name="admin_nome" value="<?= htmlspecialchars($config['admin_nome']) ?>"></div>
-                                <div class="campo"><label>E-mail de acesso</label><input type="email" name="admin_email" value="<?= htmlspecialchars($config['admin_email']) ?>"></div>
+                                <div class="campo"><label>Nome</label><input type="text" name="admin_nome" value="<?= htmlspecialchars($admin_nome) ?>" required></div>
+                                <div class="campo"><label>E-mail de acesso</label><input type="email" name="admin_email" value="<?= htmlspecialchars($admin_email) ?>" required></div>
                             </div>
                         </div>
                     </div>
+                    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+                        <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar dados</button>
+                    </div>
+                </form>
 
+                <!-- Alterar senha -->
+                <form method="POST" action="configuracoes.php?secao=conta">
+                    <input type="hidden" name="alterar_senha" value="1">
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
@@ -536,48 +706,38 @@ $dias = [
                             </div>
                             <div class="info-box">
                                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                Deixe em branco para manter a senha atual. Mínimo de 8 caracteres.
+                                Mínimo de 8 caracteres. Deixe em branco para manter a senha atual.
                             </div>
                         </div>
                     </div>
-
-                    <div class="sec-card" style="border-color:#fca5a5">
-                        <div class="sec-head" style="background:#fff5f5">
-                            <div class="sec-head-icone" style="background:#fff;border:1px solid #fca5a5"><svg viewBox="0 0 24 24" style="stroke:#dc2626"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-                            <div class="sec-head-texto"><h2 style="color:#dc2626">Zona de perigo</h2><p style="color:#dc2626;opacity:.7">Ações irreversíveis</p></div>
-                        </div>
-                        <div class="sec-body">
-                            <div class="toggle-row">
-                                <div class="toggle-info">
-                                    <div class="t-titulo">Encerrar todas as sessões</div>
-                                    <div class="t-sub">Desconecta todos os dispositivos logados no painel</div>
-                                </div>
-                                <button type="button" class="btn btn-cinza" style="flex-shrink:0">Encerrar sessões</button>
-                            </div>
-                            <div class="toggle-row">
-                                <div class="toggle-info">
-                                    <div class="t-titulo">Limpar cache do sistema</div>
-                                    <div class="t-sub">Remove dados temporários e força recarregamento</div>
-                                </div>
-                                <button type="button" class="btn btn-cinza" style="flex-shrink:0">Limpar cache</button>
-                            </div>
-                        </div>
+                    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+                        <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Alterar senha</button>
                     </div>
-                    <?php endif; ?>
-
-                    <!-- BARRA SALVAR -->
-                    <div class="save-bar">
-                        <p>As alterações serão aplicadas imediatamente ao site.</p>
-                        <div style="display:flex;gap:10px">
-                            <a href="?secao=<?= $secao ?>"><button type="button" class="btn btn-cinza">Descartar</button></a>
-                            <button type="submit" class="btn btn-rosa">
-                                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-                                Salvar configurações
-                            </button>
-                        </div>
-                    </div>
-
                 </form>
+
+                <!-- Zona de perigo -->
+                <div class="sec-card" style="border-color:#fca5a5">
+                    <div class="sec-head" style="background:#fff5f5">
+                        <div class="sec-head-icone" style="background:#fff;border:1px solid #fca5a5"><svg viewBox="0 0 24 24" style="stroke:#dc2626"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                        <div class="sec-head-texto"><h2 style="color:#dc2626">Zona de perigo</h2><p style="color:#dc2626;opacity:.7">Ações irreversíveis</p></div>
+                    </div>
+                    <div class="sec-body">
+                        <div class="toggle-row">
+                            <div class="toggle-info">
+                                <div class="t-titulo">Encerrar todas as sessões</div>
+                                <div class="t-sub">Desconecta todos os dispositivos logados</div>
+                            </div>
+                            <form method="POST" action="../logout.php">
+                                <input type="hidden" name="encerrar_tudo" value="1">
+                                <button type="submit" class="btn btn-cinza" style="flex-shrink:0">Encerrar sessões</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <?php endif; ?>
+
+                </div><!-- /config-conteudo -->
             </div><!-- /config-layout -->
         </div><!-- /conteudo -->
     </div><!-- /main -->
@@ -595,24 +755,20 @@ $dias = [
         document.getElementById('sidebar').classList.remove('aberta');
         document.getElementById('overlayMobile').style.display = 'none';
     }
-
-    // Toggle dia (habilitar/desabilitar campos de horário)
     function toggleDia(sigla) {
-        var cb     = document.getElementById('func_' + sigla);
-        var horas  = document.getElementById('horas_' + sigla);
-        var status = cb.closest('.dia-row').querySelector('div:last-child');
+        var cb    = document.getElementById('func_' + sigla);
+        var horas = document.getElementById('horas_' + sigla);
+        var label = cb.closest('.dia-row').querySelector('div:last-child');
         if (cb.checked) {
             horas.classList.remove('fechado');
-            status.textContent  = 'Aberto';
-            status.style.color  = '#16a34a';
+            label.textContent   = 'Aberto';
+            label.style.color   = '#16a34a';
         } else {
             horas.classList.add('fechado');
-            status.textContent  = 'Fechado';
-            status.style.color  = 'var(--cinza)';
+            label.textContent   = 'Fechado';
+            label.style.color   = 'var(--cinza)';
         }
     }
-
-    // Mostrar/ocultar senha
     function toggleSenha(id) {
         var inp = document.getElementById(id);
         inp.type = inp.type === 'password' ? 'text' : 'password';
