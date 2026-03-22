@@ -1,6 +1,7 @@
 <?php
 // admin/pages/dashboard.php
 require_once '../includes/auth.php';
+require_once '../../config/db.php';
 
 // ============================================
 // DADOS SIMULADOS — substituir por banco depois

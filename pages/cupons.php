@@ -1,6 +1,7 @@
 <?php
 // admin/pages/cupons.php
 require_once '../includes/auth.php';
+require_once '../../config/db.php';
 
 $mensagem = '';
 $erro     = '';

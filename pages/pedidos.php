@@ -1,6 +1,7 @@
 <?php
 // admin/pages/pedidos.php
 require_once '../includes/auth.php';
+require_once '../../config/db.php';
 
 // ============================================
 // AÇÕES PHP
