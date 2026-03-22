@@ -1,121 +1,430 @@
 <?php
-
-require_once __DIR__ . '/../inc/config.php';  
+// public/login.php
+require_once __DIR__ . '/../inc/config.php';
 require_once __DIR__ . '/../inc/db.php';
 require_once __DIR__ . '/../inc/functions.php';
+require_once __DIR__ . '/../inc/auth.php';
 
-$erro = '';
+// Se já está logado, redireciona
+if (cliente_logado()) {
+    redirecionar(BASE_URL . '/public/index.php');
+}
 
+$erro     = '';
+$sucesso  = '';
+
+// ── PROCESSAR LOGIN ──────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
-    $senha = trim($_POST['senha'] ?? '');
+    $senha = $_POST['senha'] ?? '';
 
     if (empty($email) || empty($senha)) {
-        $erro = 'Preencha todos os campos.';
+        $erro = 'Preencha e-mail e senha.';
+    } elseif (!email_valido($email)) {
+        $erro = 'E-mail inválido.';
     } else {
-        // TODO: validar contra banco de dados
-        // header('Location: index.php'); exit;
-        $erro = 'Usuário ou senha inválidos.';
+
+        // ── 1. Verifica se é ADMIN ────────────────────────────
+        $stmt = $pdo->prepare("SELECT id, nome, email, senha_hash FROM admins WHERE email = ? LIMIT 1");
+        $stmt->execute([$email]);
+        $admin = $stmt->fetch();
+
+        if ($admin && !empty($admin['senha_hash']) && password_verify($senha, $admin['senha_hash'])) {
+            // Login de admin — inicia sessão de admin e vai para o painel
+            session_regenerate_id(true);
+            $_SESSION['admin']       = true;
+            $_SESSION['admin_id']    = $admin['id'];
+            $_SESSION['admin_nome']  = $admin['nome'];
+            $_SESSION['admin_email'] = $admin['email'];
+            $_SESSION['login_at']    = time();
+            redirecionar(BASE_URL . '/admin/index.php');
+        }
+
+        // ── 2. Verifica se é CLIENTE ──────────────────────────
+        $stmt = $pdo->prepare("
+            SELECT id, nome, email, senha_hash, ativo
+            FROM clientes
+            WHERE email = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$email]);
+        $cliente = $stmt->fetch();
+
+        if (!$cliente) {
+            $erro = 'E-mail não cadastrado.';
+        } elseif (!(bool)$cliente['ativo']) {
+            $erro = 'Conta bloqueada. Entre em contato com a loja.';
+        } elseif (empty($cliente['senha_hash']) || !password_verify($senha, $cliente['senha_hash'])) {
+            $erro = 'Senha incorreta.';
+        } else {
+            // Login de cliente bem-sucedido
+            cliente_login_sessao($cliente);
+
+            $volta = $_SESSION['redirect_apos_login'] ?? (BASE_URL . '/public/index.php');
+            unset($_SESSION['redirect_apos_login']);
+            redirecionar($volta);
+        }
     }
 }
+
+// Lê configs da loja para o nome/whatsapp
+$stmt = $pdo->query("SELECT chave, valor FROM configuracoes WHERE chave IN ('loja_nome','loja_whatsapp')");
+$cfg  = [];
+foreach ($stmt->fetchAll() as $r) $cfg[$r['chave']] = $r['valor'];
+$loja_nome  = $cfg['loja_nome']    ?? 'Sabor & Cia';
+$whatsapp   = $cfg['loja_whatsapp'] ?? '5581987028550';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrar — Sabor &amp; Cia</title>
+    <title>Entrar — <?= htmlspecialchars($loja_nome) ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="../assets/css/public.css">
-   
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --rosa:        #f43f7a;
+            --rosa-light:  #fce7f0;
+            --rosa-border: #f0e8ed;
+            --dark:        #1a1014;
+            --gray:        #9ca3af;
+            --white:       #ffffff;
+            --bg:          #fafafa;
+            --serif:       Georgia, 'Times New Roman', serif;
+            --sans:        'DM Sans', system-ui, sans-serif;
+            --r:           14px;
+        }
+
+        html, body { height: 100%; font-family: var(--sans); color: var(--dark); background: var(--bg); }
+        a { text-decoration: none; color: inherit; }
+
+        /* ── LAYOUT SPLIT ─────────────────────── */
+        .page { min-height: 100vh; display: flex; }
+
+        /* Lado esquerdo — decorativo */
+        .lado-esq {
+            flex: 1;
+            background: var(--dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            position: relative;
+            overflow: hidden;
+        }
+        .lado-esq::before {
+            content: '';
+            position: absolute;
+            width: 400px; height: 400px;
+            border-radius: 50%;
+            background: var(--rosa);
+            opacity: .08;
+            top: -100px; right: -100px;
+        }
+        .lado-esq::after {
+            content: '';
+            position: absolute;
+            width: 300px; height: 300px;
+            border-radius: 50%;
+            background: var(--rosa);
+            opacity: .06;
+            bottom: -80px; left: -80px;
+        }
+        .esq-logo {
+            font-family: var(--serif);
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 16px;
+            position: relative; z-index: 1;
+        }
+        .esq-logo span { color: var(--rosa); }
+        .esq-frase {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,.55);
+            text-align: center;
+            line-height: 1.7;
+            max-width: 300px;
+            position: relative; z-index: 1;
+        }
+        .esq-frase em {
+            font-style: normal;
+            color: var(--rosa);
+        }
+
+        /* Lado direito — formulário */
+        .lado-dir {
+            width: 460px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 40px;
+            background: var(--white);
+        }
+
+        .form-wrap { width: 100%; max-width: 360px; }
+
+        .form-titulo {
+            font-family: var(--serif);
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .form-sub {
+            font-size: .88rem;
+            color: var(--gray);
+            margin-bottom: 32px;
+        }
+        .form-sub a { color: var(--rosa); font-weight: 600; }
+
+        /* Alertas */
+        .alerta {
+            display: flex; align-items: center; gap: 8px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: .85rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        .alerta svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+        .alerta-err { background: #fff0f4; border: 1px solid var(--rosa-border); color: #be185d; }
+        .alerta-ok  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+
+        /* Campos */
+        .campo { margin-bottom: 18px; }
+        .campo label {
+            display: block;
+            font-size: .82rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--dark);
+        }
+        .campo input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: var(--r);
+            border: 1.5px solid var(--rosa-border);
+            background: var(--bg);
+            font-family: var(--sans);
+            font-size: .9rem;
+            color: var(--dark);
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .campo input:focus {
+            border-color: var(--rosa);
+            box-shadow: 0 0 0 3px rgba(244,63,122,.1);
+            background: var(--white);
+        }
+
+        /* Campo senha com toggle */
+        .senha-wrap { position: relative; }
+        .senha-wrap input { padding-right: 44px; }
+        .senha-toggle {
+            position: absolute; right: 12px; top: 50%;
+            transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; padding: 4px;
+            display: flex; align-items: center;
+        }
+        .senha-toggle svg { width: 16px; height: 16px; stroke: var(--gray); fill: none; stroke-width: 2; }
+
+        /* Esqueci senha */
+        .esqueci {
+            display: block;
+            text-align: right;
+            font-size: .78rem;
+            color: var(--rosa);
+            font-weight: 500;
+            margin-top: -10px;
+            margin-bottom: 24px;
+        }
+
+        /* Botão */
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            border-radius: 50px;
+            background: var(--rosa);
+            color: #fff;
+            border: none;
+            font-family: var(--sans);
+            font-size: .95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .2s, transform .15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-login:hover   { opacity: .88; }
+        .btn-login:active  { transform: scale(.98); }
+        .btn-login.loading { opacity: .6; pointer-events: none; }
+        .btn-login svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.5; }
+
+        /* Divisor */
+        .divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 24px 0;
+            font-size: .78rem;
+            color: var(--gray);
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--rosa-border);
+        }
+
+        /* Continuar sem conta */
+        .btn-sem-conta {
+            width: 100%;
+            padding: 13px;
+            border-radius: 50px;
+            background: transparent;
+            color: var(--dark);
+            border: 1.5px solid var(--rosa-border);
+            font-family: var(--sans);
+            font-size: .88rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            transition: border-color .2s, color .2s;
+            text-decoration: none;
+            display: block;
+        }
+        .btn-sem-conta:hover { border-color: var(--rosa); color: var(--rosa); }
+
+        /* Cadastro link */
+        .cadastro-link {
+            text-align: center;
+            font-size: .83rem;
+            color: var(--gray);
+            margin-top: 28px;
+        }
+        .cadastro-link a { color: var(--rosa); font-weight: 600; }
+
+        /* Responsivo — esconde lado esquerdo no mobile */
+        @media (max-width: 768px) {
+            .lado-esq { display: none; }
+            .lado-dir { width: 100%; padding: 32px 24px; }
+        }
+    </style>
 </head>
 <body>
 
-<div class="mobile-header">
-    <a href="index.php" class="logo">Sabor<span>&</span>Cia</a>
-</div>
-
 <div class="page">
 
-    <div class="side-img">
-        <div class="side-content">
-            <a href="index.php" class="side-logo">Sabor<span>&</span>Cia</a>
-            <div class="side-bottom">
-                <h2>Peça com <em>facilidade</em>, receba com sabor.</h2>
-                <p>Faça login e acesse seu histórico de pedidos, favoritos e muito mais.</p>
-            </div>
-        </div>
+    <!-- LADO ESQUERDO — decorativo -->
+    <div class="lado-esq">
+        <div class="esq-logo">Sabor<span>&</span>Cia</div>
+        <p class="esq-frase">
+            Açaí, burgers e doces feitos com<br>
+            <em>muito amor e sabor.</em><br><br>
+            Entre na sua conta e acompanhe<br>
+            seus pedidos em tempo real.
+        </p>
     </div>
 
-    <div class="side-form">
-        <div class="form-box">
+    <!-- LADO DIREITO — formulário -->
+    <div class="lado-dir">
+        <div class="form-wrap">
 
-            <a href="index.php" class="voltar">
-                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-                Voltar ao início
-            </a>
-
-            <div class="form-header">
-                <h1>Bem-vindo de volta</h1>
-                <p>Não tem conta? <a href="cadastro.php">Cadastre-se grátis</a></p>
-            </div>
+            <h1 class="form-titulo">Bem-vindo!</h1>
+            <p class="form-sub">
+                Não tem conta?
+                <a href="cadastro.php">Criar conta grátis</a>
+            </p>
 
             <?php if ($erro): ?>
-            <div class="alerta"><?= htmlspecialchars($erro) ?></div>
+            <div class="alerta alerta-err">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <?= htmlspecialchars($erro) ?>
+            </div>
             <?php endif; ?>
 
-            <form method="POST" action="login.php" novalidate>
-                <div class="field">
+            <form method="POST" action="login.php" id="formLogin" novalidate>
+
+                <div class="campo">
                     <label for="email">E-mail</label>
-                    <input type="email" id="email" name="email"
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
                         placeholder="seu@email.com"
                         value="<?= htmlspecialchars($_POST['email'] ?? '') ?>"
-                        autocomplete="email" required>
+                        autocomplete="email"
+                        required>
                 </div>
 
-                <div class="field">
+                <div class="campo">
                     <label for="senha">Senha</label>
-                    <input type="password" id="senha" name="senha"
-                        placeholder="Sua senha"
-                        autocomplete="current-password" required>
+                    <div class="senha-wrap">
+                        <input
+                            type="password"
+                            id="senha"
+                            name="senha"
+                            placeholder="••••••••"
+                            autocomplete="current-password"
+                            required>
+                        <button type="button" class="senha-toggle" onclick="toggleSenha()" aria-label="Mostrar senha">
+                            <svg id="iconOlho" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="forgot">
-                    <a href="recuperar-senha.php">Esqueceu a senha?</a>
-                </div>
+                <button type="submit" class="btn-login" id="btnLogin">
+                    <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                    Entrar
+                </button>
 
-                <button type="submit" class="btn-submit">Entrar</button>
             </form>
 
-            <div class="divider"><span>ou continue com</span></div>
+            <div class="divider">ou</div>
 
-            <div class="social-btns">
-                <a href="auth/google.php" class="btn-social">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                    <span>Continuar com Google</span>
-                </a>
-
-                <a href="auth/facebook.php" class="btn-social">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#1877F2"/>
-                    </svg>
-                    <span>Continuar com Facebook</span>
-                </a>
-            </div>
+            <a href="index.php" class="btn-sem-conta">
+                Continuar sem conta
+            </a>
 
             <p class="cadastro-link">
-                Ainda não tem conta? <a href="cadastro.php">Criar conta grátis</a>
+                Ainda não tem conta?
+                <a href="cadastro.php">Criar conta agora</a>
             </p>
 
         </div>
     </div>
 </div>
+
+<script>
+    // Toggle mostrar/ocultar senha
+    function toggleSenha() {
+        var inp  = document.getElementById('senha');
+        var icon = document.getElementById('iconOlho');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+        } else {
+            inp.type = 'password';
+            icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+        }
+    }
+
+    // Spinner no botão ao submeter
+    document.getElementById('formLogin').addEventListener('submit', function() {
+        var btn = document.getElementById('btnLogin');
+        btn.classList.add('loading');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" style="animation:spin .8s linear infinite"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="#fff" fill="none" stroke-width="2" stroke-linecap="round"/></svg> Entrando...';
+    });
+</script>
+
+<style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 
 </body>
 </html>
