@@ -314,8 +314,8 @@ $depoimentos = [
         .cart-sidebar.open { transform: translateX(0); }
         .cart-head { padding:18px 20px; border-bottom:1px solid var(--rosa-border); display:flex; align-items:center; justify-content:space-between; }
         .cart-head h3 { font-family:var(--serif); font-size:1.1rem; font-weight:700; }
-        .cart-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--gray); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background .2s; }
-        .cart-close:hover { background:var(--rosa-light); color:var(--rosa); }
+        .cart-close { background: none; border: 1.5px solid var(--rosa-border); font-size: 1.1rem; cursor: pointer; color: var(--dark); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; }
+.cart-close:hover { background: var(--rosa); color: #fff; border-color: var(--rosa); }
         .cart-items { flex:1; overflow-y:auto; padding:16px 20px; }
         .cart-vazio { font-size:.85rem; color:var(--gray); text-align:center; padding:32px 0; line-height:1.7; }
         .cart-item { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--bg); }
