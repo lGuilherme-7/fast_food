@@ -1,33 +1,38 @@
 <?php
-
 require_once __DIR__ . '/../../inc/config.php';
 require_once __DIR__ . '/../../inc/db.php';
 
-// admin/logout.php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Guardar nome antes de destruir
+// opcional: impedir acesso direto
+if (!isset($_SESSION['admin'])) {
+    header('Location: login.php');
+    exit;
+}
+
 $nome = $_SESSION['admin_nome'] ?? 'Administrador';
 
-// Destruir sessão completamente
-session_unset();
-session_destroy();
+// segurança extra
+session_regenerate_id(true);
 
-// Limpar cookie de sessão
+// limpa dados
+session_unset();
+
+// limpa cookie
 if (ini_get('session.use_cookies')) {
     $p = session_get_cookie_params();
     setcookie(
         session_name(), '',
-        time() - 42000,
+        time() - 1800,
         $p['path'], $p['domain'],
         $p['secure'], $p['httponly']
     );
 }
 
-// Redirecionar imediatamente? Descomente:
-// header('Location: login.php'); exit;
+// destrói sessão
+session_destroy();
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
