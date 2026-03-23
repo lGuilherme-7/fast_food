@@ -1,8 +1,4 @@
 <?php
-// ============================================================
-// public/ajax_cupom.php — Endpoint AJAX para validar cupom
-// Chamado pelo checkout.php via fetch()
-// ============================================================
 require_once __DIR__ . '/../inc/config.php';
 require_once __DIR__ . '/../inc/db.php';
 require_once __DIR__ . '/../inc/carrinho.php';
@@ -22,13 +18,23 @@ if (empty($codigo)) {
     exit;
 }
 
+// Busca o cupom direto para pegar tipo e valor bruto
+$stmt = $pdo->prepare("
+    SELECT * FROM cupons
+    WHERE codigo = ? AND ativo = 1
+      AND (validade IS NULL OR validade >= CURDATE())
+      AND (limite = 0 OR usos < limite)
+");
+$stmt->execute([$codigo]);
+$cupom = $stmt->fetch();
+
 $resultado = cupom_aplicar($pdo, $codigo, $subtotal);
 
 echo json_encode([
-    'valido'    => $resultado['valido'],
-    'mensagem'  => $resultado['mensagem'],
-    'desconto'  => $resultado['desconto'],
-    'cupom_id'  => $resultado['cupom_id'],
-    'tipo'      => '', // retornado do banco se necessário
-    'valor'     => $resultado['desconto'],
+    'valido'   => $resultado['valido'],
+    'mensagem' => $resultado['mensagem'],
+    'desconto' => $resultado['desconto'],
+    'cupom_id' => $resultado['cupom_id'],
+    'tipo'     => $cupom ? $cupom['tipo']          : '',   // 'percentual' ou 'fixo'
+    'valor'    => $cupom ? (float)$cupom['valor']  : 0,   // valor bruto do cupom
 ]);
