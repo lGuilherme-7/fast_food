@@ -331,7 +331,7 @@ $admin_nome  = $_SESSION['admin_nome'] ?? 'Administrador';
                 <?php if (empty($vendas_por_dia)): ?>
                 <div style="padding:40px;text-align:center;color:var(--cinza);font-size:.85rem;">Nenhuma venda no período.</div>
                 <?php else: ?>
-                <div class="barras-wrap">
+               <div class="barras-wrap">
                     <?php foreach ($vendas_por_dia as $d):
                         $altura = $max_receita > 0 ? round(($d['receita'] / $max_receita) * 140) : 4;
                     ?>
