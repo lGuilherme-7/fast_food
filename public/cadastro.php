@@ -265,6 +265,7 @@ $loja_nome = $cfg['loja_nome'] ?? 'Sabor & Cia';
             color: var(--gray);
             margin: 18px 0 22px;
             line-height: 1.5;
+            
         }
         .termos input[type="checkbox"] { accent-color: var(--rosa); width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; cursor: pointer; }
         .termos a { color: var(--rosa); font-weight: 600; }
@@ -446,7 +447,7 @@ $loja_nome = $cfg['loja_nome'] ?? 'Sabor & Cia';
                 <!-- Termos -->
                 <label class="termos">
                     <input type="checkbox" id="termos" name="termos" required>
-                    Concordo com os <a href="#">termos de uso</a> e <a href="#">política de privacidade</a>
+                    Concordo com os <a href="termos.php">termos de uso</a> e <a href="#">política de privacidade</a>
                 </label>
 
                 <button type="submit" class="btn-cadastrar" id="btnCadastrar">
