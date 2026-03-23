@@ -314,7 +314,7 @@ $depoimentos = [
         .cart-sidebar.open { transform: translateX(0); }
         .cart-head { padding:18px 20px; border-bottom:1px solid var(--rosa-border); display:flex; align-items:center; justify-content:space-between; }
         .cart-head h3 { font-family:var(--serif); font-size:1.1rem; font-weight:700; }
-        .cart-close { background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--gray); width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+        .cart-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--gray); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background .2s; }
         .cart-close:hover { background:var(--rosa-light); color:var(--rosa); }
         .cart-items { flex:1; overflow-y:auto; padding:16px 20px; }
         .cart-vazio { font-size:.85rem; color:var(--gray); text-align:center; padding:32px 0; line-height:1.7; }
@@ -385,7 +385,7 @@ $depoimentos = [
 
         <ul class="nav-links" id="navLinks">
             <li><a href="#inicio">Início</a></li>
-            <li><a href="#cardapio">Cardápio</a></li>
+            <li><a href="produtos.php">Cardápio</a></li>
             <li><a href="#ofertas">Ofertas</a></li>
             <li><a href="#sobre">Sobre</a></li>
         </ul>
