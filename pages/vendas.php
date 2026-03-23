@@ -333,12 +333,11 @@ $admin_nome  = $_SESSION['admin_nome'] ?? 'Administrador';
                 <?php else: ?>
                 <div class="barras-wrap">
                     <?php foreach ($vendas_por_dia as $d):
-                        $altura = $max_receita > 0 ? ($d['receita'] / $max_receita) * 100 : 0;
+                        $altura = $max_receita > 0 ? round(($d['receita'] / $max_receita) * 140) : 4;
                     ?>
                     <div class="barra-col">
                         <div class="barra-val">R$ <?= number_format($d['receita'], 0, ',', '.') ?></div>
-                        <div class="barra" style="height:<?= round($altura) ?>%"
-                             title="<?= $d['dia'] ?>: R$ <?= number_format($d['receita'], 2, ',', '.') ?>"></div>
+                        <div class="barra" style="height:<?= $altura ?>px; width:100%"></div>
                         <div class="barra-label"><?= $d['dia'] ?></div>
                     </div>
                     <?php endforeach; ?>

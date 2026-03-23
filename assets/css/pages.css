@@ -806,7 +806,6 @@
             flex-direction: column;
             align-items: center;
             gap: 6px;
-            height: 100%;
             justify-content: flex-end;
         }
         .barra-val {
