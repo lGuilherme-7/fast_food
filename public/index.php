@@ -439,8 +439,8 @@ $depoimentos = [
         <h1>O sabor que conquista desde a <em>primeira mordida</em></h1>
         <p>Açaí cremoso, burgers artesanais, doces incríveis e bebidas geladas. Feito com amor, entregue na sua porta.</p>
         <div class="hero-btns">
-            <a href="#cardapio" class="btn btn-rosa">Ver cardápio</a>
-            <a href="https://wa.me/<?= $whatsapp ?>?text=Oi!%20Quero%20fazer%20um%20pedido" target="_blank" rel="noopener" class="btn btn-ghost">Pedir pelo WhatsApp</a>
+            <a href="produtos.php" class="btn btn-rosa">Ver cardápio</a>
+            <a href="sobre.php" class="btn btn-ghost">Conheça a loja</a>
         </div>
     </div>
 </section>
