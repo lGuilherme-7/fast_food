@@ -205,10 +205,26 @@ function renderCart(){
     if(!cart.length){ el.innerHTML='<p class="cart-vazio">Seu carrinho está vazio.<br>Adicione algo gostoso!</p>'; }
     else {
         el.innerHTML=cart.map(function(it,idx){
-            return '<div class="cart-item"><div class="cart-item-img"><img src="'+it.img+'" alt="'+it.nome+'"></div><div class="cart-item-info"><div class="cart-item-nome">'+it.nome+(it.qtd>1?' ×'+it.qtd:'')+'</div><div class="cart-item-preco">R$ '+(it.preco*it.qtd).toFixed(2).replace('.',',')+'</div></div><button class="cart-rm" onclick="removeCart('+idx+')">✕</button></div>';
+            return '<div class="cart-item">'
+                + '<div class="cart-item-img"><img src="'+it.img+'" alt="'+it.nome+'"></div>'
+                + '<div class="cart-item-info">'
+                + '<div class="cart-item-nome">'+it.nome+'</div>'
+                + '<div class="cart-item-preco">R$ '+(it.preco*it.qtd).toFixed(2).replace('.',',')+'</div>'
+                + '<div class="cart-item-qtd">'
+                + '<button onclick="mudarQtdCart('+idx+',-1)">−</button>'
+                + '<span>'+it.qtd+'</span>'
+                + '<button onclick="mudarQtdCart('+idx+',1)">+</button>'
+                + '</div></div>'
+                + '<button class="cart-rm" onclick="removeCart('+idx+')">✕</button>'
+                + '</div>';
         }).join('');
     }
     document.getElementById('cartTotal').textContent='R$ '+total.toFixed(2).replace('.',',');
+}
+
+function mudarQtdCart(idx, delta){
+    cart[idx].qtd = Math.max(1, cart[idx].qtd + delta);
+    salvarCart(); renderCart();
 }
 
 function salvarCart(){ localStorage.setItem('sc_cart',JSON.stringify(cart)); }
