@@ -67,9 +67,7 @@ function pedido_criar(PDO $pdo, array $dados, array $itens, float $taxa_entrega 
 
         foreach ($itens as $it) {
             $sub  = (float)$it['produto_preco'] * (int)$it['quantidade'];
-            $adds = is_array($it['adicionais'] ?? null)
-                ? implode(', ', $it['adicionais'])
-                : ($it['adicionais'] ?? '');
+            $adds = $it['adicionais'] ?? '';
 
             $stmtItem->execute([
                 $pedido_id,
