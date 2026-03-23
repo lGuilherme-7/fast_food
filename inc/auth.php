@@ -64,7 +64,7 @@ function exigir_login_cliente(string $redirect = ''): void {
  * Verifica se o admin está logado.
  */
 function admin_logado(): bool {
-    return isset($_SESSION['admin']) && $_SESSION['admin'] === true;
+    return isset($_SESSION['admin_id']) && (int)$_SESSION['admin_id'] > 0;
 }
 
 /**
