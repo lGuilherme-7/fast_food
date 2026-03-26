@@ -29,13 +29,68 @@ $cfg_stmt = $pdo->query("SELECT chave, valor FROM configuracoes
 $cfg = [];
 
 // aberta ou fecahda 
-$diaAtual = strtolower(date('l')); 
+date_default_timezone_set('America/recife');
+
+// 🔥 CARREGA CONFIG DO BANCO (ESSENCIAL)
+$stmt = $pdo->query("SELECT chave, valor FROM configuracoes");
+$cfg  = [];
+
+foreach ($stmt->fetchAll() as $r) {
+    $cfg[$r['chave']] = $r['valor'];
+}
+
+// 🔥 MAPA DE DIAS (corrige o erro principal)
+$diasMap = [
+    'monday' => 'seg',
+    'tuesday' => 'ter',
+    'wednesday' => 'qua',
+    'thursday' => 'qui',
+    'friday' => 'sex',
+    'saturday' => 'sab',
+    'sunday' => 'dom'
+];
+
+$diaAtualEN = strtolower(date('l'));
+$diaAtual   = $diasMap[$diaAtualEN] ?? 'seg';
+
 $horaAtual = date('H:i');
 
-$abre = $cfg['func_'.$diaAtual.'_abre'] ?? null;
+$abre  = $cfg['func_'.$diaAtual.'_abre'] ?? null;
 $fecha = $cfg['func_'.$diaAtual.'_fecha'] ?? null;
 
-$estaAberto = ($horaAtual >= $abre && $horaAtual <= $fecha);
+$estaAberto  = false;
+$statusTexto = 'Fechado';
+
+// 🔥 LÓGICA COMPLETA
+if ($abre && $fecha) {
+
+    if ($horaAtual >= $abre && $horaAtual <= $fecha) {
+        // 🟢 ABERTO
+        $estaAberto = true;
+        $statusTexto = "Aberto agora — fecha às $fecha";
+
+    } else {
+
+        if ($horaAtual < $abre) {
+            // 🔴 ABRE HOJE
+
+            $diff = strtotime($abre) - strtotime($horaAtual);
+
+            $horas = floor($diff / 3600);
+            $minutos = floor(($diff % 3600) / 60);
+
+            if ($horas > 0) {
+                $statusTexto = "Abre em {$horas}h {$minutos}min";
+            } else {
+                $statusTexto = "Abre em {$minutos} minutos";
+            }
+
+        } else {
+            // 🔴 JÁ FECHOU HOJE
+            $statusTexto = "Fechado — abre amanhã às $abre";
+        }
+    }
+}
     
 
 
@@ -482,15 +537,11 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         <p>Preencha seus dados. O pedido será confirmado pelo WhatsApp.</p>
     </div>
 
-    <!-- STATUS AGORA -->
-        <div class="status-agora <?= $estaAberto ? 'aberto' : 'fechado' ?>">
-            <div class="status-dot"></div>
-            <?php if ($estaAberto): ?>
-                Aberto agora — fecha às <?= htmlspecialchars($cfg['func_'.$diaAtual.'_fecha'] ?? '') ?>
-            <?php else: ?>
-                Fechado no momento
-            <?php endif; ?>
-        </div>
+        <!-- STATUS AGORA -->
+<div class="status-agora <?= $estaAberto ? 'aberto' : 'fechado' ?>">
+    <div class="status-dot"></div>
+    <?= htmlspecialchars($statusTexto) ?>
+</div>
 
     <?php if ($erro): ?>
     <div class="alerta-erro"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><?= h($erro) ?></div>

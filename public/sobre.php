@@ -183,28 +183,76 @@ $dias = [
 <div class="conteudo">
     <div class="container">
 
-        <?php
-        // Verifica se está aberto agora
-        $diasSigla = ['0'=>'dom','1'=>'seg','2'=>'ter','3'=>'qua','4'=>'qui','5'=>'sex','6'=>'sab'];
-        $diaAtual  = $diasSigla[date('w')];
-        $horaAtual = date('H:i');
-        $estaAberto = false;
-        if (cb($cfg, 'func_'.$diaAtual, false)) {
-            $abre  = $cfg['func_'.$diaAtual.'_abre']  ?? '00:00';
-            $fecha = $cfg['func_'.$diaAtual.'_fecha'] ?? '23:59';
-            $estaAberto = ($horaAtual >= $abre && $horaAtual <= $fecha);
-        }
-        ?>
+       <?php
+date_default_timezone_set('America/Sao_Paulo');
 
-        <!-- STATUS AGORA -->
-        <div class="status-agora <?= $estaAberto ? 'aberto' : 'fechado' ?>">
-            <div class="status-dot"></div>
-            <?php if ($estaAberto): ?>
-                Aberto agora — fecha às <?= htmlspecialchars($cfg['func_'.$diaAtual.'_fecha'] ?? '') ?>
-            <?php else: ?>
-                Fechado no momento
-            <?php endif; ?>
-        </div>
+// 🔥 CARREGA CONFIG DO BANCO (ESSENCIAL)
+$stmt = $pdo->query("SELECT chave, valor FROM configuracoes");
+$cfg  = [];
+
+foreach ($stmt->fetchAll() as $r) {
+    $cfg[$r['chave']] = $r['valor'];
+}
+
+// 🔥 MAPA DE DIAS (corrige o erro principal)
+$diasMap = [
+    'monday' => 'seg',
+    'tuesday' => 'ter',
+    'wednesday' => 'qua',
+    'thursday' => 'qui',
+    'friday' => 'sex',
+    'saturday' => 'sab',
+    'sunday' => 'dom'
+];
+
+$diaAtualEN = strtolower(date('l'));
+$diaAtual   = $diasMap[$diaAtualEN] ?? 'seg';
+
+$horaAtual = date('H:i');
+
+$abre  = $cfg['func_'.$diaAtual.'_abre'] ?? null;
+$fecha = $cfg['func_'.$diaAtual.'_fecha'] ?? null;
+
+$estaAberto  = false;
+$statusTexto = 'Fechado';
+
+// 🔥 LÓGICA COMPLETA
+if ($abre && $fecha) {
+
+    if ($horaAtual >= $abre && $horaAtual <= $fecha) {
+        // 🟢 ABERTO
+        $estaAberto = true;
+        $statusTexto = "Aberto agora — fecha às $fecha";
+
+    } else {
+
+        if ($horaAtual < $abre) {
+            // 🔴 ABRE HOJE
+
+            $diff = strtotime($abre) - strtotime($horaAtual);
+
+            $horas = floor($diff / 3600);
+            $minutos = floor(($diff % 3600) / 60);
+
+            if ($horas > 0) {
+                $statusTexto = "Abre em {$horas}h {$minutos}min";
+            } else {
+                $statusTexto = "Abre em {$minutos} minutos";
+            }
+
+        } else {
+            // 🔴 JÁ FECHOU HOJE
+            $statusTexto = "Fechado — abre amanhã às $abre";
+        }
+    }
+}
+?>
+
+     <!-- STATUS AGORA -->
+<div class="status-agora <?= $estaAberto ? 'aberto' : 'fechado' ?>">
+    <div class="status-dot"></div>
+    <?= htmlspecialchars($statusTexto) ?>
+</div>
 
         <!-- CARDS RÁPIDOS -->
         <div class="info-rapida">
