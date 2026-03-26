@@ -153,7 +153,7 @@ $admin_nome  = $_SESSION['admin_nome'] ?? 'Administrador';
 <div class="admin-wrap">
 
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo"><a href="../index.php">Sabor<span>&</span>Cia</a><p>Painel administrativo</p></div>
+        <div class="sidebar-logo"><a href="../public/index.php">Sabor<span>&</span>Cia</a><p>Painel administrativo</p></div>
         <nav class="sidebar-nav">
             <div class="nav-label">Geral</div>
             <a href="dashboard.php" class="nav-item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
@@ -174,7 +174,7 @@ $admin_nome  = $_SESSION['admin_nome'] ?? 'Administrador';
                 <div class="user-avatar"><?= mb_strtoupper(mb_substr($admin_nome,0,2)) ?></div>
                 <div class="user-info"><div class="user-nome"><?= htmlspecialchars($admin_nome) ?></div><div class="user-role">admin</div></div>
             </div>
-            <a href="../logout.php"><button class="btn-logout"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair do painel</button></a>
+            <a href="../public/index.php"><button class="btn-logout"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sair do painel</button></a>
         </div>
     </aside>
 
