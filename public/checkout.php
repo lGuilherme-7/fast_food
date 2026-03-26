@@ -27,6 +27,18 @@ $cfg_stmt = $pdo->query("SELECT chave, valor FROM configuracoes
                     'loja_lat','loja_lng',
                     'frete_km_base','frete_km_extra','frete_raio_gratis')");
 $cfg = [];
+
+// aberta ou fecahda 
+$diaAtual = strtolower(date('l')); 
+$horaAtual = date('H:i');
+
+$abre = $cfg['func_'.$diaAtual.'_abre'] ?? null;
+$fecha = $cfg['func_'.$diaAtual.'_fecha'] ?? null;
+
+$estaAberto = ($horaAtual >= $abre && $horaAtual <= $fecha);
+    
+
+
 foreach ($cfg_stmt->fetchAll() as $r) $cfg[$r['chave']] = $r['valor'];
 
 $whatsapp       = $cfg['loja_whatsapp']   ?? '5581987028550';
@@ -294,6 +306,16 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         .sec-head-num { width:26px; height:26px; border-radius:50%; background:var(--rosa); color:#fff; font-size:.78rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .sec-titulo { font-family:var(--serif); font-size:1rem; font-weight:700; }
 
+        /* Status aberto/fechado agora */
+        .status-agora { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:50px; font-size:.82rem; font-weight:600; margin-bottom:24px; }
+        .status-agora.aberto  { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+        .status-agora.fechado { background:#fff5f5; color:#dc2626; border:1px solid #fca5a5; }
+        .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+        .status-agora.aberto  .status-dot { background:#22c55e; animation:pulse 2s infinite; }
+        .status-agora.fechado .status-dot { background:#dc2626; }
+        @keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+
+
         .campo-grid   { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
         .campo-grid-3 { display:grid; grid-template-columns:2fr 1fr 1fr; gap:14px; }
         .campo { display:flex; flex-direction:column; gap:6px; }
@@ -459,6 +481,16 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         <h1>Finalizar pedido</h1>
         <p>Preencha seus dados. O pedido será confirmado pelo WhatsApp.</p>
     </div>
+
+    <!-- STATUS AGORA -->
+        <div class="status-agora <?= $estaAberto ? 'aberto' : 'fechado' ?>">
+            <div class="status-dot"></div>
+            <?php if ($estaAberto): ?>
+                Aberto agora — fecha às <?= htmlspecialchars($cfg['func_'.$diaAtual.'_fecha'] ?? '') ?>
+            <?php else: ?>
+                Fechado no momento
+            <?php endif; ?>
+        </div>
 
     <?php if ($erro): ?>
     <div class="alerta-erro"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><?= h($erro) ?></div>
