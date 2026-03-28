@@ -9,14 +9,12 @@ $mensagem = '';
 $erro     = '';
 
 // ── CARREGA TODAS AS CONFIGURAÇÕES DO BANCO ──────────────────
-// A tabela `configuracoes` tem: chave (PK), valor, grupo
 $stmt = $pdo->query("SELECT chave, valor FROM configuracoes");
 $cfg  = [];
 foreach ($stmt->fetchAll() as $row) {
     $cfg[$row['chave']] = $row['valor'];
 }
 
-// Helper: lê config com fallback
 function cfg(array $cfg, string $chave, string $padrao = ''): string {
     return $cfg[$chave] ?? $padrao;
 }
@@ -26,55 +24,56 @@ function cfgBool(array $cfg, string $chave, bool $padrao = false): bool {
 }
 
 // ── SEÇÃO ATIVA ───────────────────────────────────────────────
-$secao  = in_array($_GET['secao'] ?? '', ['loja','funcionamento','entrega','pagamentos','notificacoes','conta'])
-    ? $_GET['secao']
-    : 'loja';
+$secao = in_array($_GET['secao'] ?? '', ['loja','funcionamento','entrega','pagamentos','notificacoes','conta'])
+    ? $_GET['secao'] : 'loja';
 
-// ── SALVAR CONFIGURAÇÕES ─────────────────────────────────────
+// ── SALVAR CONFIGURAÇÕES ──────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar'])) {
 
-    // Campos booleanos que podem não vir no POST quando desmarcados
+    // IMPORTANTE: local_ativo adicionado aqui
     $bool_keys = [
         'func_seg','func_ter','func_qua','func_qui','func_sex','func_sab','func_dom',
-        'entrega_ativa','retirada_ativa',
+        'entrega_ativa','retirada_ativa','local_ativo',
         'pag_dinheiro','pag_cartao','pag_pix',
         'notif_pedido','notif_email','notif_wpp',
     ];
 
-    // Monta array de chaves → valores a salvar
-    $salvar = [];
-
-    // Todos os campos de texto/select do formulário
     $campos_texto = [
-        // Loja
         'loja_nome','loja_descricao','loja_cnpj','loja_email',
         'loja_telefone','loja_whatsapp','loja_endereco','loja_bairro',
         'loja_cidade','loja_estado','loja_cep',
-        // Horários
         'func_seg_abre','func_seg_fecha','func_ter_abre','func_ter_fecha',
         'func_qua_abre','func_qua_fecha','func_qui_abre','func_qui_fecha',
         'func_sex_abre','func_sex_fecha','func_sab_abre','func_sab_fecha',
         'func_dom_abre','func_dom_fecha',
-        // Entrega
         'entrega_taxa','entrega_gratis','entrega_tempo','entrega_raio','retirada_tempo',
-        // Pagamentos
         'pix_chave','pix_tipo','pix_nome',
-        // Notificações
         'notif_email_dest',
     ];
 
+    $salvar = [];
     foreach ($campos_texto as $chave) {
         if (isset($_POST[$chave])) {
             $salvar[$chave] = trim($_POST[$chave]);
         }
     }
 
-    // Booleanos: 1 se marcado, 0 se não veio no POST
-    foreach ($bool_keys as $chave) {
+    // Booleanos presentes no formulário atual: salva 1 ou 0
+    // Booleanos AUSENTES do formulário atual (outra seção): NÃO toca, preserva valor do banco
+    // Para isso, filtra apenas os bool_keys que realmente foram "enviáveis" neste formulário
+    $bool_por_secao = [
+        'loja'          => [],
+        'funcionamento' => ['func_seg','func_ter','func_qua','func_qui','func_sex','func_sab','func_dom'],
+        'entrega'       => ['entrega_ativa','retirada_ativa','local_ativo'],
+        'pagamentos'    => ['pag_dinheiro','pag_cartao','pag_pix'],
+        'notificacoes'  => ['notif_pedido','notif_email','notif_wpp'],
+        'conta'         => [],
+    ];
+
+    foreach (($bool_por_secao[$secao] ?? []) as $chave) {
         $salvar[$chave] = isset($_POST[$chave]) ? '1' : '0';
     }
 
-    // Upsert de cada configuração (INSERT ... ON DUPLICATE KEY UPDATE)
     $stmt = $pdo->prepare("
         INSERT INTO configuracoes (chave, valor)
         VALUES (?, ?)
@@ -89,7 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar'])) {
         $pdo->commit();
         $mensagem = 'Configurações salvas com sucesso!';
 
-        // Recarrega após salvar
         $stmt2 = $pdo->query("SELECT chave, valor FROM configuracoes");
         $cfg   = [];
         foreach ($stmt2->fetchAll() as $row) $cfg[$row['chave']] = $row['valor'];
@@ -100,13 +98,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar'])) {
     }
 }
 
-// ── ALTERAR SENHA (seção conta) ───────────────────────────────
+// ── ALTERAR SENHA ─────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
     $senha_atual = $_POST['senha_atual'] ?? '';
     $senha_nova  = $_POST['senha_nova']  ?? '';
     $senha_conf  = $_POST['senha_conf']  ?? '';
-
-    $admin_id = $_SESSION['admin_id'] ?? 0;
+    $admin_id    = $_SESSION['admin_id'] ?? 0;
 
     if (empty($senha_atual) || empty($senha_nova)) {
         $erro = 'Preencha a senha atual e a nova senha.';
@@ -118,27 +115,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alterar_senha'])) {
         $stmt = $pdo->prepare("SELECT senha_hash FROM admins WHERE id = ?");
         $stmt->execute([$admin_id]);
         $hash_atual = $stmt->fetchColumn();
-
         if (!$hash_atual || !password_verify($senha_atual, $hash_atual)) {
             $erro = 'Senha atual incorreta.';
         } else {
-            $novo_hash = password_hash($senha_nova, PASSWORD_BCRYPT);
-            $pdo->prepare("UPDATE admins SET senha_hash = ? WHERE id = ?")->execute([$novo_hash, $admin_id]);
+            $pdo->prepare("UPDATE admins SET senha_hash = ? WHERE id = ?")
+                ->execute([password_hash($senha_nova, PASSWORD_BCRYPT), $admin_id]);
             $mensagem = 'Senha alterada com sucesso!';
         }
     }
 }
 
-// ── DADOS DO ADMIN LOGADO ────────────────────────────────────
+// ── ATUALIZAR CONTA ───────────────────────────────────────────
 $admin_nome  = $_SESSION['admin_nome']  ?? 'Administrador';
 $admin_email = $_SESSION['admin_email'] ?? '';
 
-// Atualizar nome/email do admin (seção conta)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_conta'])) {
     $novo_nome  = trim($_POST['admin_nome']  ?? '');
     $novo_email = trim($_POST['admin_email'] ?? '');
     $admin_id   = $_SESSION['admin_id'] ?? 0;
-
     if (empty($novo_nome) || empty($novo_email)) {
         $erro = 'Nome e e-mail são obrigatórios.';
     } else {
@@ -147,20 +141,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_conta'])) {
         $_SESSION['admin_email'] = $novo_email;
         $admin_nome  = $novo_nome;
         $admin_email = $novo_email;
-        $mensagem    = 'Dados da conta atualizados!';
+        $mensagem = 'Dados da conta atualizados!';
     }
 }
 
-// ── DIAS DA SEMANA ────────────────────────────────────────────
-$dias = [
-    'seg' => 'Segunda',
-    'ter' => 'Terça',
-    'qua' => 'Quarta',
-    'qui' => 'Quinta',
-    'sex' => 'Sexta',
-    'sab' => 'Sábado',
-    'dom' => 'Domingo',
-];
+$dias = ['seg'=>'Segunda','ter'=>'Terça','qua'=>'Quarta','qui'=>'Quinta','sex'=>'Sexta','sab'=>'Sábado','dom'=>'Domingo'];
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -172,18 +157,13 @@ $dias = [
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/pages.css">
     <style>
-        /* Estilos específicos de configurações */
         .config-layout { display:grid; grid-template-columns:200px 1fr; gap:24px; align-items:start; }
-
-        /* Nav lateral de seções */
         .config-nav { background:var(--branco); border:1px solid var(--borda); border-radius:var(--r); padding:12px; position:sticky; top:76px; }
         .config-nav-titulo { font-size:.68rem; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--cinza); padding:4px 8px 10px; }
         .config-nav-item { display:flex; align-items:center; gap:9px; padding:9px 12px; border-radius:8px; font-size:.83rem; font-weight:500; color:var(--cinza); transition:background .15s, color .15s; text-decoration:none; margin-bottom:2px; }
         .config-nav-item:hover { background:var(--rosa-claro); color:var(--rosa); }
         .config-nav-item.ativo { background:var(--rosa); color:#fff; }
         .config-nav-item svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; }
-
-        /* Seção card */
         .sec-card { background:var(--branco); border:1px solid var(--borda); border-radius:var(--r); overflow:hidden; margin-bottom:16px; }
         .sec-head  { display:flex; align-items:center; gap:14px; padding:16px 20px; background:var(--bg); border-bottom:1px solid var(--borda); }
         .sec-head-icone { width:36px; height:36px; border-radius:9px; background:var(--rosa-claro); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -191,19 +171,13 @@ $dias = [
         .sec-head-texto h2 { font-family:var(--f-titulo); font-size:.95rem; font-weight:700; }
         .sec-head-texto p  { font-size:.76rem; color:var(--cinza); margin-top:2px; }
         .sec-body  { padding:20px; }
-
-        /* Campos */
         .campos-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
         .campos-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px; }
         .campo-full { margin-bottom:14px; }
         .campo-sep  { border:none; border-top:1px solid var(--borda); margin:16px 0; }
         .campo-hint { font-size:.74rem; color:var(--cinza); margin-top:3px; display:block; }
-
-        /* Info box */
         .info-box { display:flex; align-items:flex-start; gap:8px; background:var(--rosa-claro); border:1px solid var(--rosa-borda); border-radius:8px; padding:10px 12px; margin-top:10px; font-size:.8rem; color:var(--rosa); font-weight:500; }
         .info-box svg { width:14px; height:14px; stroke:var(--rosa); fill:none; stroke-width:2; flex-shrink:0; margin-top:1px; }
-
-        /* Horários */
         .dia-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid var(--borda); flex-wrap:wrap; }
         .dia-row:last-child { border-bottom:none; }
         .dia-nome  { width:80px; font-size:.85rem; font-weight:600; flex-shrink:0; }
@@ -211,15 +185,11 @@ $dias = [
         .horas-wrap input[type="time"] { padding:7px 10px; border-radius:8px; border:1px solid var(--borda); font-family:var(--f-corpo); font-size:.85rem; background:var(--branco); color:var(--escuro); }
         .horas-wrap.fechado input[type="time"] { opacity:.3; pointer-events:none; }
         .horas-sep { font-size:.8rem; color:var(--cinza); }
-
-        /* Toggle row */
         .toggle-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--borda); }
         .toggle-row:last-child { border-bottom:none; }
         .toggle-info { flex:1; min-width:0; }
         .t-titulo { font-size:.88rem; font-weight:600; }
         .t-sub    { font-size:.76rem; color:var(--cinza); margin-top:2px; }
-
-        /* Pagamentos */
         .pagto-grid { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
         .pagto-card { display:flex; align-items:center; gap:12px; padding:14px 16px; border:1.5px solid var(--borda); border-radius:var(--r); cursor:pointer; min-width:140px; transition:all .2s; flex:1; }
         .pagto-card:has(input:checked) { border-color:var(--rosa); background:var(--rosa-claro); }
@@ -228,33 +198,18 @@ $dias = [
         .pagto-card:has(input:checked) svg { stroke:var(--rosa); }
         .p-titulo { font-size:.88rem; font-weight:600; }
         .p-sub    { font-size:.74rem; color:var(--cinza); }
-
-        /* Senha */
         .senha-field { position:relative; }
         .senha-field input { padding-right:40px; width:100%; }
         .senha-toggle { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:4px; display:flex; align-items:center; }
         .senha-toggle svg { width:15px; height:15px; stroke:var(--cinza); fill:none; stroke-width:2; }
-
-        /* Barra salvar */
         .save-bar { background:var(--branco); border:1px solid var(--borda); border-radius:var(--r); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; position:sticky; bottom:20px; box-shadow:0 4px 20px rgba(0,0,0,.08); margin-top:4px; }
         .save-bar p { font-size:.82rem; color:var(--cinza); }
-
-        /* Responsivo */
-        @media (max-width:860px) {
-            .config-layout { grid-template-columns:1fr; }
-            .config-nav    { position:static; display:flex; gap:4px; flex-wrap:wrap; }
-            .config-nav-titulo { display:none; }
-        }
-        @media (max-width:600px) {
-            .campos-grid-2, .campos-grid-3 { grid-template-columns:1fr; }
-            .pagto-grid { flex-direction:column; }
-        }
+        @media (max-width:860px) { .config-layout { grid-template-columns:1fr; } .config-nav { position:static; display:flex; gap:4px; flex-wrap:wrap; } .config-nav-titulo { display:none; } }
+        @media (max-width:600px) { .campos-grid-2, .campos-grid-3 { grid-template-columns:1fr; } .pagto-grid { flex-direction:column; } }
     </style>
 </head>
 <body>
 <div class="admin-wrap">
-
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
             <a href="../public/index.php">Sabor<span>&</span>Cia</a>
@@ -287,7 +242,6 @@ $dias = [
         </div>
     </aside>
 
-    <!-- MAIN -->
     <div class="main">
         <div class="topbar">
             <div class="topbar-esq">
@@ -306,7 +260,6 @@ $dias = [
         </div>
 
         <div class="conteudo">
-
             <?php if ($mensagem): ?>
             <div class="alerta alerta-ok"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg><?= htmlspecialchars($mensagem) ?></div>
             <?php endif; ?>
@@ -315,8 +268,6 @@ $dias = [
             <?php endif; ?>
 
             <div class="config-layout">
-
-                <!-- NAV LATERAL -->
                 <nav class="config-nav">
                     <div class="config-nav-titulo">Seções</div>
                     <a href="?secao=loja"          class="config-nav-item <?= $secao==='loja'          ?'ativo':'' ?>"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Dados da loja</a>
@@ -327,14 +278,11 @@ $dias = [
                     <a href="?secao=conta"          class="config-nav-item <?= $secao==='conta'          ?'ativo':'' ?>"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Minha conta</a>
                 </nav>
 
-                <!-- CONTEÚDO DA SEÇÃO -->
                 <div class="config-conteudo">
 
                 <?php if ($secao === 'loja'): ?>
-                <!-- ── DADOS DA LOJA ──────────────────────── -->
                 <form method="POST" action="configuracoes.php?secao=loja">
                     <input type="hidden" name="salvar" value="1">
-
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
@@ -350,7 +298,6 @@ $dias = [
                             </div>
                         </div>
                     </div>
-
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.44 2 2 0 0 1 3.57 1.25h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.05 6.05l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
@@ -371,7 +318,6 @@ $dias = [
                             </div>
                         </div>
                     </div>
-
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
@@ -389,7 +335,6 @@ $dias = [
                             </div>
                         </div>
                     </div>
-
                     <div class="save-bar">
                         <p>Mudanças aplicadas imediatamente ao site.</p>
                         <div style="display:flex;gap:10px">
@@ -400,10 +345,8 @@ $dias = [
                 </form>
 
                 <?php elseif ($secao === 'funcionamento'): ?>
-                <!-- ── FUNCIONAMENTO ──────────────────────── -->
                 <form method="POST" action="configuracoes.php?secao=funcionamento">
                     <input type="hidden" name="salvar" value="1">
-
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
@@ -412,7 +355,7 @@ $dias = [
                         <div class="sec-body">
                             <?php foreach ($dias as $sigla => $nome):
                                 $aberto = cfgBool($cfg, 'func_' . $sigla, $sigla !== 'dom');
-                                $abre   = cfg($cfg, 'func_' . $sigla . '_abre',  $sigla === 'sab' || $sigla === 'dom' ? '12:00' : '11:00');
+                                $abre   = cfg($cfg, 'func_' . $sigla . '_abre',  in_array($sigla,['sab','dom']) ? '12:00' : '11:00');
                                 $fecha  = cfg($cfg, 'func_' . $sigla . '_fecha', $sigla === 'dom' ? '22:00' : '23:00');
                             ?>
                             <div class="dia-row">
@@ -429,14 +372,13 @@ $dias = [
                                     <span class="horas-sep">até</span>
                                     <input type="time" name="func_<?= $sigla ?>_fecha" value="<?= htmlspecialchars($fecha) ?>">
                                 </div>
-                                <div style="font-size:.78rem;font-weight:600;<?= $aberto ? 'color:#16a34a' : 'color:var(--cinza)' ?>">
+                                <div style="font-size:.78rem;font-weight:600;<?= $aberto ? 'color:#16a34a' : 'color:var(--cinza)' ?>" id="label_<?= $sigla ?>">
                                     <?= $aberto ? 'Aberto' : 'Fechado' ?>
                                 </div>
                             </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
-
                     <div class="save-bar">
                         <p>Mudanças aplicadas imediatamente ao site.</p>
                         <div style="display:flex;gap:10px">
@@ -447,10 +389,8 @@ $dias = [
                 </form>
 
                 <?php elseif ($secao === 'entrega'): ?>
-                <!-- ── ENTREGA ─────────────────────────────── -->
                 <form method="POST" action="configuracoes.php?secao=entrega">
                     <input type="hidden" name="salvar" value="1">
-
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
@@ -514,6 +454,23 @@ $dias = [
                         </div>
                     </div>
 
+                    <!-- CORREÇÃO: local_ativo agora existe no formulário -->
+                    <div class="sec-card">
+                        <div class="sec-head">
+                            <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M3 2h18v20H3z"/><rect x="7" y="6" width="3" height="3"/><rect x="14" y="6" width="3" height="3"/><rect x="7" y="12" width="3" height="3"/><rect x="14" y="12" width="3" height="3"/></svg></div>
+                            <div class="sec-head-texto"><h2>Consumo no local</h2><p>Opção para o cliente comer no estabelecimento</p></div>
+                        </div>
+                        <div class="sec-body">
+                            <div class="toggle-row">
+                                <div class="toggle-info"><div class="t-titulo">Comer aqui ativo</div><div class="t-sub">Permite pedidos para consumo no local (mesa)</div></div>
+                                <div class="toggle-wrap">
+                                    <input type="checkbox" class="toggle-inp" id="local_ativo" name="local_ativo" <?= cfgBool($cfg,'local_ativo',true) ? 'checked' : '' ?>>
+                                    <label class="toggle-label" for="local_ativo"></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="save-bar">
                         <p>Mudanças aplicadas imediatamente ao checkout.</p>
                         <div style="display:flex;gap:10px">
@@ -524,10 +481,8 @@ $dias = [
                 </form>
 
                 <?php elseif ($secao === 'pagamentos'): ?>
-                <!-- ── PAGAMENTOS ──────────────────────────── -->
                 <form method="POST" action="configuracoes.php?secao=pagamentos">
                     <input type="hidden" name="salvar" value="1">
-
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
@@ -553,7 +508,6 @@ $dias = [
                             </div>
                         </div>
                     </div>
-
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
@@ -584,7 +538,6 @@ $dias = [
                             </div>
                         </div>
                     </div>
-
                     <div class="save-bar">
                         <p>Mudanças aplicadas imediatamente ao checkout.</p>
                         <div style="display:flex;gap:10px">
@@ -595,10 +548,8 @@ $dias = [
                 </form>
 
                 <?php elseif ($secao === 'notificacoes'): ?>
-                <!-- ── NOTIFICAÇÕES ────────────────────────── -->
                 <form method="POST" action="configuracoes.php?secao=notificacoes">
                     <input type="hidden" name="salvar" value="1">
-
                     <div class="sec-card">
                         <div class="sec-head">
                             <div class="sec-head-icone"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
@@ -636,7 +587,6 @@ $dias = [
                             </div>
                         </div>
                     </div>
-
                     <div class="save-bar">
                         <p>Mudanças aplicadas imediatamente.</p>
                         <div style="display:flex;gap:10px">
@@ -647,9 +597,6 @@ $dias = [
                 </form>
 
                 <?php elseif ($secao === 'conta'): ?>
-                <!-- ── MINHA CONTA ─────────────────────────── -->
-
-                <!-- Dados pessoais -->
                 <form method="POST" action="configuracoes.php?secao=conta">
                     <input type="hidden" name="atualizar_conta" value="1">
                     <div class="sec-card">
@@ -668,8 +615,6 @@ $dias = [
                         <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Salvar dados</button>
                     </div>
                 </form>
-
-                <!-- Alterar senha -->
                 <form method="POST" action="configuracoes.php?secao=conta">
                     <input type="hidden" name="alterar_senha" value="1">
                     <div class="sec-card">
@@ -706,7 +651,7 @@ $dias = [
                             </div>
                             <div class="info-box">
                                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                Mínimo de 8 caracteres. Deixe em branco para manter a senha atual.
+                                Mínimo de 8 caracteres.
                             </div>
                         </div>
                     </div>
@@ -714,8 +659,6 @@ $dias = [
                         <button type="submit" class="btn btn-rosa"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Alterar senha</button>
                     </div>
                 </form>
-
-                <!-- Zona de perigo -->
                 <div class="sec-card" style="border-color:#fca5a5">
                     <div class="sec-head" style="background:#fff5f5">
                         <div class="sec-head-icone" style="background:#fff;border:1px solid #fca5a5"><svg viewBox="0 0 24 24" style="stroke:#dc2626"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
@@ -729,19 +672,18 @@ $dias = [
                             </div>
                             <form method="POST" action="../logout.php">
                                 <input type="hidden" name="encerrar_tudo" value="1">
-                                <button type="submit" class="btn btn-cinza" style="flex-shrink:0">Encerrar sessões</button>
+                                <button type="submit" class="btn btn-cinza">Encerrar sessões</button>
                             </form>
                         </div>
                     </div>
                 </div>
-
                 <?php endif; ?>
 
-                </div><!-- /config-conteudo -->
-            </div><!-- /config-layout -->
-        </div><!-- /conteudo -->
-    </div><!-- /main -->
-</div><!-- /admin-wrap -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="overlayMobile" onclick="fecharMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;"></div>
 
@@ -758,15 +700,15 @@ $dias = [
     function toggleDia(sigla) {
         var cb    = document.getElementById('func_' + sigla);
         var horas = document.getElementById('horas_' + sigla);
-        var label = cb.closest('.dia-row').querySelector('div:last-child');
+        var label = document.getElementById('label_' + sigla);
         if (cb.checked) {
             horas.classList.remove('fechado');
-            label.textContent   = 'Aberto';
-            label.style.color   = '#16a34a';
+            label.textContent = 'Aberto';
+            label.style.color = '#16a34a';
         } else {
             horas.classList.add('fechado');
-            label.textContent   = 'Fechado';
-            label.style.color   = 'var(--cinza)';
+            label.textContent = 'Fechado';
+            label.style.color = 'var(--cinza)';
         }
     }
     function toggleSenha(id) {

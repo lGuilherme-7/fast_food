@@ -27,27 +27,57 @@ foreach ($cfg_stmt->fetchAll() as $r) {
 
 // ── STATUS DE FUNCIONAMENTO ───────────────────────────────────
 $diasSigla = ['0'=>'dom','1'=>'seg','2'=>'ter','3'=>'qua','4'=>'qui','5'=>'sex','6'=>'sab'];
+$diasNomes = ['0'=>'Domingo','1'=>'Segunda','2'=>'Terça','3'=>'Quarta','4'=>'Quinta','5'=>'Sexta','6'=>'Sábado'];
 $diaAtual  = $diasSigla[date('w')];
-$horaAtual = date('H:i');
+$agora     = new DateTime('now');
 
 $ativo  = !empty($cfg['func_'.$diaAtual]) && (bool)(int)$cfg['func_'.$diaAtual];
-$abre   = $cfg['func_'.$diaAtual.'_abre']  ?? '';
-$fecha  = $cfg['func_'.$diaAtual.'_fecha'] ?? '';
+$abre   = trim($cfg['func_'.$diaAtual.'_abre']  ?? '');
+$fecha  = trim($cfg['func_'.$diaAtual.'_fecha'] ?? '');
 
-// Só calcula status se o dia estiver ativo E tiver horários definidos
 $estaAberto     = false;
 $jaFechou       = false;
 $aindaVaiAbrir  = false;
 $tempoParaAbrir = '';
 
 if ($ativo && $abre !== '' && $fecha !== '') {
-    $estaAberto    = ($horaAtual >= $abre && $horaAtual <= $fecha);
-    $jaFechou      = ($horaAtual > $fecha);
-    $aindaVaiAbrir = ($horaAtual < $abre);
+    $dtAbre  = DateTime::createFromFormat('H:i', $abre)  ?: DateTime::createFromFormat('G:i', $abre);
+    $dtFecha = DateTime::createFromFormat('H:i', $fecha) ?: DateTime::createFromFormat('G:i', $fecha);
 
-    if ($aindaVaiAbrir) {
-        $diff = (new DateTime($horaAtual))->diff(new DateTime($abre));
-        $tempoParaAbrir = ($diff->h > 0 ? $diff->h . 'h ' : '') . $diff->i . 'min';
+    if ($dtAbre && $dtFecha) {
+        // Se o horário de fechamento é menor ou igual ao de abertura,
+        // significa que passa da meia-noite (ex: abre 12:00, fecha 00:00 = fecha às 00:00 do dia seguinte)
+        if ($dtFecha <= $dtAbre) {
+            $dtFecha->modify('+1 day');
+        }
+
+        $estaAberto    = ($agora >= $dtAbre && $agora <= $dtFecha);
+        $jaFechou      = ($agora > $dtFecha);
+        $aindaVaiAbrir = ($agora < $dtAbre);
+
+        if ($aindaVaiAbrir) {
+            $diff = $agora->diff($dtAbre);
+            $tempoParaAbrir = ($diff->h > 0 ? $diff->h . 'h ' : '') . $diff->i . 'min';
+        }
+        // Normaliza para exibição (usa horário original, sem o +1 day)
+        $abre  = $dtAbre->format('H:i');
+        $fecha = DateTime::createFromFormat('H:i', trim($cfg['func_'.$diaAtual.'_fecha'] ?? ''))->format('H:i')
+                 ?: trim($cfg['func_'.$diaAtual.'_fecha'] ?? '');
+    }
+}
+
+// Próximo dia com funcionamento (para quando está fechado)
+$proximoDia = '';
+if (!$estaAberto) {
+    $diasOffset = $jaFechou ? 1 : ($ativo ? 0 : 1); // se fechou hoje, começa amanhã
+    for ($i = ($jaFechou ? 1 : ($ativo && !$estaAberto && !$aindaVaiAbrir ? 1 : 1)); $i <= 7; $i++) {
+        $idx   = (string)(((int)date('w') + $i) % 7);
+        $sigla = $diasSigla[$idx];
+        if (!empty($cfg['func_'.$sigla]) && (bool)(int)$cfg['func_'.$sigla]) {
+            $abreProx = trim($cfg['func_'.$sigla.'_abre'] ?? '');
+            $proximoDia = $diasNomes[$idx] . ($abreProx ? ', a partir das ' . $abreProx : '');
+            break;
+        }
     }
 }
 
@@ -55,12 +85,20 @@ $whatsapp       = $cfg['loja_whatsapp']   ?? '5581987028550';
 $gratis_acima   = (float)($cfg['entrega_gratis']    ?? 50.00);
 $entrega_tempo  = $cfg['entrega_tempo']   ?? '40';
 $retirada_tempo = $cfg['retirada_tempo']  ?? '15';
-$entrega_ativa  = (bool)(int)($cfg['entrega_ativa']  ?? 1);
-$retirada_ativa = (bool)(int)($cfg['retirada_ativa'] ?? 1);
-$local_ativo    = (bool)(int)($cfg['local_ativo']    ?? 1);
-$pag_dinheiro   = (bool)(int)($cfg['pag_dinheiro']   ?? 1);
-$pag_cartao     = (bool)(int)($cfg['pag_cartao']     ?? 1);
-$pag_pix        = (bool)(int)($cfg['pag_pix']        ?? 1);
+// Fallback defensivo: se nenhuma config de entrega foi salva ainda (instalação nova),
+// ativa tudo por padrão. Se já existe alguma chave no banco, usa o valor real (pode ser 0).
+$tem_cfg_entrega = isset($cfg['entrega_ativa']) || isset($cfg['retirada_ativa']) || isset($cfg['local_ativo']);
+$entrega_ativa   = $tem_cfg_entrega ? (bool)(int)($cfg['entrega_ativa']  ?? 0) : true;
+$retirada_ativa  = $tem_cfg_entrega ? (bool)(int)($cfg['retirada_ativa'] ?? 0) : true;
+$local_ativo     = $tem_cfg_entrega ? (bool)(int)($cfg['local_ativo']    ?? 0) : true;
+
+$tem_cfg_pag  = isset($cfg['pag_pix']) || isset($cfg['pag_cartao']) || isset($cfg['pag_dinheiro']);
+$pag_dinheiro = $tem_cfg_pag ? (bool)(int)($cfg['pag_dinheiro'] ?? 0) : true;
+$pag_cartao   = $tem_cfg_pag ? (bool)(int)($cfg['pag_cartao']   ?? 0) : true;
+$pag_pix      = $tem_cfg_pag ? (bool)(int)($cfg['pag_pix']      ?? 0) : true;
+
+// Garante pelo menos uma opção de entrega ativa
+if (!$entrega_ativa && !$retirada_ativa && !$local_ativo) { $entrega_ativa = true; }
 
 $loja_lat = (float)($cfg['loja_lat'] ?? -8.0522);
 $loja_lng = (float)($cfg['loja_lng'] ?? -34.9286);
@@ -69,6 +107,12 @@ $frete_km_base        = (float)($cfg['frete_km_base']     ?? 5.00);
 $frete_km_extra       = (float)($cfg['frete_km_extra']    ?? 2.00);
 $frete_raio_gratis_km = (float)($cfg['frete_raio_gratis'] ?? 0);
 
+// Garante ao menos uma opção ativa
+if (!$entrega_ativa && !$retirada_ativa && !$local_ativo) {
+    $entrega_ativa = true;
+}
+$tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'local');
+
 // ── HELPERS ───────────────────────────────────────────────────
 function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float {
     $R    = 6371;
@@ -76,19 +120,6 @@ function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float {
     $dLng = deg2rad($lng2 - $lng1);
     $a    = sin($dLat/2)**2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng/2)**2;
     return $R * 2 * atan2(sqrt($a), sqrt(1 - $a));
-}
-
-function geocodificar(string $endereco): ?array {
-    $url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' . urlencode($endereco);
-    $ctx = stream_context_create(['http' => [
-        'timeout' => 5,
-        'header'  => "User-Agent: SaborCia/1.0\r\n",
-    ]]);
-    $json = @file_get_contents($url, false, $ctx);
-    if (!$json) return null;
-    $data = json_decode($json, true);
-    if (empty($data[0])) return null;
-    return [(float)$data[0]['lat'], (float)$data[0]['lon']];
 }
 
 function calcular_taxa_por_km(float $km, float $base, float $extra_por_km, float $raio_gratis): float {
@@ -243,8 +274,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
-$tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'local');
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -254,7 +283,7 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
     <title>Checkout — <?= h($cfg['loja_nome'] ?? 'Sabor & Cia') ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-     <style>
+    <style>
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
         :root {
             --rosa:#f43f7a; --rosa-claro:#fce7f0; --rosa-borda:#f0e8ed;
@@ -300,7 +329,6 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         .sec-head-num { width:26px; height:26px; border-radius:50%; background:var(--rosa); color:#fff; font-size:.78rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
         .sec-titulo { font-family:var(--serif); font-size:1rem; font-weight:700; }
 
-        /* Status aberto/fechado agora */
         .status-agora { display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:50px; font-size:.82rem; font-weight:600; margin-bottom:24px; }
         .status-agora.aberto  { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
         .status-agora.fechado { background:#fff5f5; color:#dc2626; border:1px solid #fca5a5; }
@@ -319,7 +347,6 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         .campo textarea { resize:vertical; min-height:72px; }
         .campo-hint { font-size:.75rem; color:var(--cinza); margin-top:3px; }
 
-        /* CEP */
         .cep-wrap { position:relative; }
         .cep-wrap input { padding-right:44px; }
         .cep-loading { position:absolute; right:12px; top:50%; transform:translateY(-50%); display:none; }
@@ -328,7 +355,6 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         .cep-ok  { color:#16a34a; font-size:.75rem; margin-top:3px; display:none; }
         .cep-err { color:#be185d; font-size:.75rem; margin-top:3px; display:none; }
 
-        /* Distância */
         .frete-calculado { background:var(--bg); border:1px solid var(--borda); border-radius:var(--r); padding:12px 14px; margin-top:12px; font-size:.85rem; display:none; }
         .frete-calculado.vis { display:flex; align-items:center; justify-content:space-between; }
         .frete-calculado .dist { color:var(--cinza); }
@@ -337,8 +363,11 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         .frete-aviso-raio { background:#fff7ed; border:1px solid #fde68a; border-radius:var(--r); padding:10px 14px; font-size:.82rem; color:#854d0e; margin-top:8px; display:none; }
         .frete-aviso-raio.vis { display:block; }
 
-        /* Tipo entrega */
-        .entrega-opts { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+        /* Tipo entrega — grid adaptativo conforme qtd de opções */
+        .entrega-opts { display:grid; gap:10px; margin-bottom:20px; }
+        .entrega-opts.opts-1 { grid-template-columns:1fr; }
+        .entrega-opts.opts-2 { grid-template-columns:1fr 1fr; }
+        .entrega-opts.opts-3 { grid-template-columns:repeat(3,1fr); }
         .entrega-opt  { border:1.5px solid var(--rosa-borda); border-radius:var(--r); padding:14px 12px; cursor:pointer; transition:all .2s; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px; }
         .entrega-opt:has(input:checked) { border-color:var(--rosa); background:var(--rosa-claro); }
         .entrega-opt input[type="radio"] { display:none; }
@@ -378,7 +407,6 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         .alerta-erro { background:#fff0f4; border:1px solid var(--rosa-borda); color:#be185d; border-radius:var(--r); padding:12px 16px; font-size:.85rem; font-weight:500; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
         .alerta-erro svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; }
 
-        /* RESUMO */
         .resumo { background:var(--branco); border:1px solid var(--rosa-borda); border-radius:var(--r); padding:22px; position:sticky; top:76px; }
         .resumo h2 { font-family:var(--serif); font-size:1.05rem; font-weight:700; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--rosa-borda); }
         .resumo-itens { margin-bottom:14px; }
@@ -429,8 +457,8 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:var(--escuro); color:#fff; padding:10px 22px; border-radius:50px; font-size:.85rem; font-weight:500; z-index:2000; opacity:0; transition:all .3s; white-space:nowrap; pointer-events:none; }
         .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
 
-        @media (max-width:860px) { .checkout-grid { grid-template-columns:1fr; } .resumo { position:static; } .entrega-opts { grid-template-columns:1fr; } }
-        @media (max-width:560px) { .campo-grid, .campo-grid-3 { grid-template-columns:1fr; } }
+        @media (max-width:860px) { .checkout-grid { grid-template-columns:1fr; } .resumo { position:static; } .entrega-opts.opts-3 { grid-template-columns:1fr; } .entrega-opts.opts-2 { grid-template-columns:1fr 1fr; } }
+        @media (max-width:560px) { .campo-grid, .campo-grid-3 { grid-template-columns:1fr; } .entrega-opts.opts-2 { grid-template-columns:1fr; } }
     </style>
 </head>
 <body>
@@ -479,34 +507,15 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
     <div class="status-agora <?= $estaAberto ? 'aberto' : 'fechado' ?>">
         <div class="status-dot"></div>
         <?php if (!$ativo): ?>
-            <?php
-            // Dia desativado — procura o próximo dia com funcionamento
-            $proximoDia = '';
-            $diasNomes  = ['0'=>'Domingo','1'=>'Segunda','2'=>'Terça','3'=>'Quarta','4'=>'Quinta','5'=>'Sexta','6'=>'Sábado'];
-            for ($i = 1; $i <= 7; $i++) {
-                $idx  = (string)(((int)date('w') + $i) % 7);
-                $sigla = $diasSigla[$idx];
-                if (!empty($cfg['func_'.$sigla]) && (bool)(int)$cfg['func_'.$sigla]) {
-                    $proximoDia = $diasNomes[$idx] . ', a partir das ' . ($cfg['func_'.$sigla.'_abre'] ?? '');
-                    break;
-                }
-            }
-            ?>
-            Fechado hoje
-            <?php if ($proximoDia): ?> — Próximo funcionamento: <strong><?= htmlspecialchars($proximoDia) ?></strong><?php endif; ?>
-
+            Fechado hoje<?php if ($proximoDia): ?> — Próximo: <strong><?= h($proximoDia) ?></strong><?php endif; ?>
         <?php elseif ($estaAberto): ?>
-            Aberto agora — <?= htmlspecialchars($abre) ?> às <?= htmlspecialchars($fecha) ?>
-
+            Aberto agora — <?= h($abre) ?> às <?= h($fecha) ?>
         <?php elseif ($aindaVaiAbrir): ?>
-            Abre hoje às <?= htmlspecialchars($abre) ?> — faltam <strong><?= $tempoParaAbrir ?></strong>
-
+            Abre hoje às <?= h($abre) ?><?php if ($tempoParaAbrir): ?> — faltam <strong><?= $tempoParaAbrir ?></strong><?php endif; ?>
         <?php elseif ($jaFechou): ?>
-            Fechado — funcionou hoje das <?= htmlspecialchars($abre) ?> às <?= htmlspecialchars($fecha) ?>
-
+            Fechado — funcionou hoje das <?= h($abre) ?> às <?= h($fecha) ?><?php if ($proximoDia): ?> — Próximo: <strong><?= h($proximoDia) ?></strong><?php endif; ?>
         <?php else: ?>
-            Fechado
-
+            Fechado<?php if ($proximoDia): ?> — Próximo: <strong><?= h($proximoDia) ?></strong><?php endif; ?>
         <?php endif; ?>
     </div>
 
@@ -523,6 +532,12 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
         <p>Adicione produtos antes de finalizar.</p>
         <a href="index.php" class="btn-rosa">Ver cardápio</a>
     </div>
+
+    <?php
+    // Conta opções ativas para classe do grid
+    $qtdOpts = (int)$entrega_ativa + (int)$retirada_ativa + (int)$local_ativo;
+    $classeOpts = 'opts-' . max(1, $qtdOpts);
+    ?>
 
     <form method="POST" id="formCheckout" style="display:none">
         <input type="hidden" name="carrinho_json"        id="carrinhoJson">
@@ -556,13 +571,13 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
                 <div class="sec">
                     <div class="sec-head"><div class="sec-head-num">2</div><div class="sec-titulo">Como quer receber?</div></div>
 
-                    <div class="entrega-opts">
+                    <div class="entrega-opts <?= $classeOpts ?>">
                         <?php if ($entrega_ativa): ?>
                         <label class="entrega-opt">
                             <input type="radio" name="tipo_entrega" value="entrega" <?= $tipo_default==='entrega'?'checked':'' ?> onchange="onTipoChange()">
                             <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                             <div class="entrega-opt-titulo">Entrega</div>
-                            <div class="entrega-opt-sub">~<?= $entrega_tempo ?> min<br>Taxa por km</div>
+                            <div class="entrega-opt-sub">~<?= h($entrega_tempo) ?> min<br>Taxa por km</div>
                         </label>
                         <?php endif; ?>
                         <?php if ($retirada_ativa): ?>
@@ -570,7 +585,7 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
                             <input type="radio" name="tipo_entrega" value="retirada" <?= $tipo_default==='retirada'?'checked':'' ?> onchange="onTipoChange()">
                             <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                             <div class="entrega-opt-titulo">Retirada</div>
-                            <div class="entrega-opt-sub">~<?= $retirada_tempo ?> min<br>Grátis</div>
+                            <div class="entrega-opt-sub">~<?= h($retirada_tempo) ?> min<br>Grátis</div>
                         </label>
                         <?php endif; ?>
                         <?php if ($local_ativo): ?>
@@ -609,7 +624,6 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
                         <?php endif; ?>
 
                         <div id="formEndereco" <?= !empty($enderecos_salvos)?'style="display:none"':'' ?>>
-
                             <div class="campo" style="margin-bottom:14px">
                                 <label>CEP *</label>
                                 <div class="cep-wrap">
@@ -621,7 +635,6 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
                                 <span class="cep-ok"  id="cepOk">✓ Endereço encontrado!</span>
                                 <span class="cep-err" id="cepErr">CEP não encontrado. Preencha manualmente.</span>
                             </div>
-
                             <div class="campo" style="margin-bottom:14px">
                                 <label>Rua / Avenida *</label>
                                 <input type="text" id="ruaInput" name="rua" placeholder="Ex: Rua das Flores" autocomplete="street-address">
@@ -678,7 +691,7 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
                     <!-- INFO RETIRADA -->
                     <div id="camposRetirada" style="display:<?= $tipo_default==='retirada'?'block':'none' ?>">
                         <div style="background:var(--bg);border:1px solid var(--borda);border-radius:var(--r);padding:14px 16px;font-size:.85rem;color:var(--cinza);line-height:1.6">
-                            📍 Retire na loja em até <strong style="color:var(--escuro)"><?= $retirada_tempo ?> minutos</strong>.<br>
+                            📍 Retire na loja em até <strong style="color:var(--escuro)"><?= h($retirada_tempo) ?> minutos</strong>.<br>
                             Confirmação pelo WhatsApp.
                         </div>
                     </div>
@@ -774,7 +787,6 @@ $tipo_default = $entrega_ativa ? 'entrega' : ($retirada_ativa ? 'retirada' : 'lo
 <div class="toast" id="toast"></div>
 
 <script>
-// ── CONFIGS DO PHP ────────────────────────────────────────────
 var LOJA_LAT          = <?= $loja_lat ?>;
 var LOJA_LNG          = <?= $loja_lng ?>;
 var FRETE_KM_BASE     = <?= $frete_km_base ?>;
@@ -806,7 +818,6 @@ function atualizarBadge() {
     b.style.display = t > 0 ? 'flex' : 'none';
 }
 
-// ── HAVERSINE (JS) ────────────────────────────────────────────
 function haversine(lat1, lng1, lat2, lng2) {
     var R    = 6371;
     var dLat = (lat2 - lat1) * Math.PI / 180;
@@ -821,7 +832,6 @@ function calcTaxaPorKm(km) {
     return Math.round((FRETE_KM_BASE + (km - 3) * FRETE_KM_EXTRA) * 100) / 100;
 }
 
-// ── BUSCA CEP ─────────────────────────────────────────────────
 function mascaraCep(inp) {
     var v = inp.value.replace(/\D/g, '').substring(0, 8);
     inp.value = v.length > 5 ? v.substring(0, 5) + '-' + v.substring(5) : v;
@@ -830,25 +840,18 @@ function mascaraCep(inp) {
 function buscarCep(cep) {
     cep = cep.replace(/\D/g, '');
     if (cep.length !== 8) return;
-
     document.getElementById('cepLoading').style.display = 'block';
     document.getElementById('cepOk').style.display      = 'none';
     document.getElementById('cepErr').style.display     = 'none';
-
     fetch('https://viacep.com.br/ws/' + cep + '/json/')
         .then(function (r) { return r.json(); })
         .then(function (d) {
             document.getElementById('cepLoading').style.display = 'none';
-            if (d.erro) {
-                document.getElementById('cepErr').style.display = 'block';
-                return;
-            }
+            if (d.erro) { document.getElementById('cepErr').style.display = 'block'; return; }
             document.getElementById('ruaInput').value    = d.logradouro || '';
             document.getElementById('bairroInput').value = d.bairro     || '';
             document.getElementById('cepOk').style.display = 'block';
-
-            var endCompleto = d.logradouro + ', ' + d.localidade + ', ' + d.uf + ', Brasil';
-            geocodificarECalcular(endCompleto);
+            geocodificarECalcular(d.logradouro + ', ' + d.localidade + ', ' + d.uf + ', Brasil');
         })
         .catch(function () {
             document.getElementById('cepLoading').style.display = 'none';
@@ -866,34 +869,19 @@ function geocodificarECalcular(endereco) {
             var lng  = parseFloat(data[0].lon);
             var km   = haversine(LOJA_LAT, LOJA_LNG, lat, lng);
             var taxa = calcTaxaPorKm(km);
-
             freteAtual = taxa;
             distAtual  = km;
-
             document.getElementById('taxaFreteCalculada').value = taxa.toFixed(2);
             document.getElementById('distanciaKm').value        = km.toFixed(2);
-
             var freteEl = document.getElementById('freteCalculado');
             freteEl.classList.add('vis');
             document.getElementById('freteDistLabel').textContent = '~' + km.toFixed(1).replace('.', ',') + ' km da loja';
-
             var taxaEl = document.getElementById('freteTaxaLabel');
-            if (taxa === 0) {
-                taxaEl.textContent = 'Grátis';
-                taxaEl.className   = 'gratis';
-            } else {
-                taxaEl.textContent = 'R$ ' + taxa.toFixed(2).replace('.', ',');
-                taxaEl.className   = 'taxa';
-            }
-
+            if (taxa === 0) { taxaEl.textContent = 'Grátis'; taxaEl.className = 'gratis'; }
+            else            { taxaEl.textContent = 'R$ ' + taxa.toFixed(2).replace('.', ','); taxaEl.className = 'taxa'; }
             var avisoEl = document.getElementById('freteAviso');
-            if (km > 15) {
-                avisoEl.textContent = '⚠️ Distância de ' + km.toFixed(1).replace('.', ',') + ' km — taxa fora do raio padrão aplicada.';
-                avisoEl.classList.add('vis');
-            } else {
-                avisoEl.classList.remove('vis');
-            }
-
+            if (km > 15) { avisoEl.textContent = '⚠️ Distância de ' + km.toFixed(1).replace('.', ',') + ' km — taxa fora do raio padrão aplicada.'; avisoEl.classList.add('vis'); }
+            else          { avisoEl.classList.remove('vis'); }
             renderResumo();
         })
         .catch(function () { mostrarFreteManual(); });
@@ -910,7 +898,6 @@ function mostrarFreteManual() {
     renderResumo();
 }
 
-// ── TIPO DE ENTREGA ───────────────────────────────────────────
 function onTipoChange() {
     var tipo = getTipo();
     document.getElementById('camposEntrega').style.display  = tipo === 'entrega'  ? 'block' : 'none';
@@ -921,12 +908,12 @@ function onTipoChange() {
 
 function getTipo() {
     var s = document.querySelector('input[name="tipo_entrega"]:checked');
-    return s ? s.value : 'entrega';
+    return s ? s.value : '<?= $tipo_default ?>';
 }
 
 function toggleTroco() {
-    var v = document.querySelector('input[name="pagamento"]:checked').value;
-    document.getElementById('trocoWrap').classList.toggle('vis', v === 'dinheiro');
+    var el = document.querySelector('input[name="pagamento"]:checked');
+    if (el) document.getElementById('trocoWrap').classList.toggle('vis', el.value === 'dinheiro');
 }
 toggleTroco();
 
@@ -965,7 +952,6 @@ document.querySelectorAll('input[name="tipo_entrega"]').forEach(function (r) {
     r.addEventListener('change', renderResumo);
 });
 
-// ── RESUMO ────────────────────────────────────────────────────
 function renderResumo() {
     var subtotal = cart.reduce(function (s, i) { return s + i.preco * i.qtd; }, 0);
     var tipo     = getTipo();
@@ -1007,12 +993,8 @@ function renderResumo() {
     document.getElementById('resumoTotal').textContent    = 'R$ ' + total.toFixed(2).replace('.', ',');
 
     var ld = document.getElementById('linhaDesconto');
-    if (desconto > 0) {
-        ld.style.display = 'flex';
-        document.getElementById('resumoDesconto').textContent = '- R$ ' + desconto.toFixed(2).replace('.', ',');
-    } else {
-        ld.style.display = 'none';
-    }
+    if (desconto > 0) { ld.style.display = 'flex'; document.getElementById('resumoDesconto').textContent = '- R$ ' + desconto.toFixed(2).replace('.', ','); }
+    else              { ld.style.display = 'none'; }
 
     var info = document.getElementById('resumoEntregaInfo');
     if (tipo === 'entrega' && GRATIS_ACIMA > 0) {
@@ -1038,7 +1020,6 @@ function atualizarBadgeTipo(tipo) {
     badge.innerHTML = (icons[tipo] || '') + '<span>' + (labels[tipo] || tipo) + '</span>';
 }
 
-// ── CUPOM AJAX ────────────────────────────────────────────────
 function verificarCupom() {
     var codigo   = document.getElementById('cupom').value.trim().toUpperCase();
     var msg      = document.getElementById('cupomMsg');
@@ -1058,7 +1039,6 @@ function verificarCupom() {
         .catch(function () { msg.textContent = 'Erro ao verificar cupom.'; msg.className = 'cupom-msg err'; });
 }
 
-// ── MÁSCARAS ──────────────────────────────────────────────────
 function mascaraTel(inp) {
     var v = inp.value.replace(/\D/g, '').substring(0, 11);
     if (v.length > 6)      v = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
@@ -1067,7 +1047,6 @@ function mascaraTel(inp) {
     inp.value = v;
 }
 
-// ── SUBMIT ────────────────────────────────────────────────────
 function prepararSubmit(e) {
     if (cart.length === 0) { e.preventDefault(); showToast('Carrinho vazio!'); return; }
     var payload = cart.map(function (it) {
@@ -1076,7 +1055,6 @@ function prepararSubmit(e) {
     document.getElementById('carrinhoJson').value = JSON.stringify(payload);
 }
 
-// ── TOAST ─────────────────────────────────────────────────────
 var toastTimer;
 function showToast(msg) {
     var el = document.getElementById('toast');
