@@ -11,10 +11,10 @@
 
 // ─── CONFIGURAÇÕES ───────────────────────────────────────────
 // XAMPP local (padrão):
-define('DB_HOST', 'sql105.infinityfree.com');
-define('DB_NAME', 'if0_41639270_XXX');
-define('DB_USER', 'if0_41639270');
-define('DB_PASS', 'P96FOMKRkTSh9b');         
+define('DB_HOST', 'sql206.ezyro.com');
+define('DB_NAME', 'ezyro_41665258_saborcia');
+define('DB_USER', 'ezyro_41665258');
+define('DB_PASS', '');         
 define('DB_PORT', '3306');
 define('DB_CHARSET', 'utf8mb4');
 
