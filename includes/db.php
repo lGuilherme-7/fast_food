@@ -11,10 +11,10 @@
 
 // ─── CONFIGURAÇÕES ───────────────────────────────────────────
 // XAMPP local (padrão):
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'saborecia');
-define('DB_USER', 'root');
-define('DB_PASS', '');         // XAMPP: senha vazia por padrão
+define('DB_HOST', 'sql105.infinityfree.com');
+define('DB_NAME', 'if0_41639270_XXX');
+define('DB_USER', 'if0_41639270');
+define('DB_PASS', 'P96FOMKRkTSh9b');         
 define('DB_PORT', '3306');
 define('DB_CHARSET', 'utf8mb4');
 
