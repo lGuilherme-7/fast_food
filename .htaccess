@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Redireciona tudo para /public
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]
+
+# Define o index principal
+DirectoryIndex public/index.php
