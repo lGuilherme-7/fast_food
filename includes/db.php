@@ -11,9 +11,9 @@
 
 // ─── CONFIGURAÇÕES ───────────────────────────────────────────
 // XAMPP local (padrão):
-define('DB_HOST', 'sql206.ezyro.com');
-define('DB_NAME', 'ezyro_41665258_saborcia');
-define('DB_USER', 'ezyro_41665258');
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'saborcia');
+define('DB_USER', 'root');
 define('DB_PASS', '');         
 define('DB_PORT', '3306');
 define('DB_CHARSET', 'utf8mb4');
